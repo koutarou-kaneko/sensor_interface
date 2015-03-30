@@ -1,0 +1,19 @@
+<package>
+  <description brief="mocap_retime">
+
+     mocap_retime
+
+  </description>
+  <author>bakui</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/mocap_retime</url>
+  <depend package="roscpp"/>
+  <depend package="tf"/>
+  <depend package="jsk_quadcopter"/>
+
+
+
+</package>
+
+

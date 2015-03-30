@@ -1,0 +1,11 @@
+<launch>
+
+  <node pkg="mocap_retime" type="mocap_retime_node" name="mocap_retime" output="screen">
+<!--    <param name="pubName" type="string" value="sim/ground_truth/pose" /> -->
+    <param name="retimeFlag" type="bool" value="true" />
+    <param name="rxFreq" type="double" value="100.0" />
+    <param name="cutoffPosFreq" type="double" value="20.0" />
+    <param name="cutoffVelFreq" type="double" value="20.0" />
+  </node>
+
+</launch>
