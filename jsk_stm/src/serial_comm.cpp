@@ -14,6 +14,13 @@ SerialComm::SerialComm(ros::NodeHandle nh, ros::NodeHandle nhp, const std::strin
  , comm_connected_(false)
 {
 
+  imu_pub_ = nh_.advertise<jsk_stm::JskImu>("jsk_imu", 5);
+  imu2_pub_ = nh_.advertise<sensor_msgs::Imu>("jsk_imu2", 5);
+  config_cmd_sub_ = nh_.subscribe<std_msgs::UInt8>("config_cmd", 1, &SerialComm::configCmdCallback, this, ros::TransportHints().tcpNoDelay());
+
+  tfB_ = new tf::TransformBroadcaster();
+
+
   n_sec_offset_ = 0;
   sec_offset_ = 0;
   offset_ = 0;
@@ -23,8 +30,13 @@ SerialComm::SerialComm(ros::NodeHandle nh, ros::NodeHandle nhp, const std::strin
 
   terminate_start_flag_ = false;
 
+  packet_stage_ = FIRST_HEADER_STAGE;
+  receive_data_size_ = 1;
+  msg_type_ = 0;
+  packet_chksum_ = 0;
+
   //debug
-  terminate_start_flag_ = true;
+  //terminate_start_flag_ = true;
 
   
 
@@ -32,6 +44,7 @@ SerialComm::SerialComm(ros::NodeHandle nh, ros::NodeHandle nhp, const std::strin
 
 SerialComm::~SerialComm()
 {
+  delete tfB_;
   printf(" destructor\n");
 
   close();
@@ -129,7 +142,7 @@ void SerialComm::readCallback(const boost::system::error_code& error, size_t byt
             }
         }
 
-        //ROS_WARN("Read error: %s", error.message().c_str());
+        ROS_WARN("Read error: %s", error.message().c_str());
 
         if (comm_error_count_ < 10)
         {
@@ -148,31 +161,216 @@ void SerialComm::readCallback(const boost::system::error_code& error, size_t byt
 
     comm_timer_.cancel();
 
-
-    uint32_t chksum = 0;
-
-    for (size_t i = 0; i < bytes_transferred; i++) 
+    switch(packet_stage_)
       {
-        //ROS_INFO("no.%d: %d", (int)i+1, comm_buffer_[(int)i]);
-        
-        if(((int)i > 1) && ((int)i < bytes_transferred - 1) )
-          chksum += comm_buffer_[(int)i];
-      }
+      case FIRST_HEADER_STAGE:
+        {
+          if(comm_buffer_[0] == FIRST_HEADER)
+            {
+              packet_stage_ = SECOND_HEADER_STAGE;
+              receive_data_size_ = 1;
+              //ROS_INFO("first header ok");
+            }
+          else
+            {
+              packet_stage_ = FIRST_HEADER_STAGE;
+              receive_data_size_ = 1;
+              ROS_ERROR("first header bad");
+            }
+          break;
+        }
+      case SECOND_HEADER_STAGE:
+        {
+          if(comm_buffer_[0] == SECOND_HEADER)
+            {
+              packet_stage_ = MSG_TYPE_STAGE;
+              receive_data_size_ = 2;
+              //ROS_INFO("second header ok");
+            }
+          else
+            {
+              packet_stage_ = FIRST_HEADER_STAGE;
+              receive_data_size_ = 1;
+              ROS_ERROR("second header bad");
+            }
+          break;
+        }
+      case MSG_TYPE_STAGE:
+        {
+          if(comm_buffer_[0] + comm_buffer_[1] == 0xff)
+            {
+              //ROS_INFO("msg type ok");
+              msg_type_ = comm_buffer_[0];
+              switch(msg_type_)
+                {
+                case IMU_DATA_MSG:
+                  {
+                    packet_stage_ = MSG_DATA_STAGE;
+                    receive_data_size_ = IMU_DATA_SIZE;
+                    //ROS_INFO("msg type imu data");
+                    break;
+                  }
+                case MPU_ACC_GYRO_CALIB_CMD:
+                  { 
+                    ROS_INFO("calib acc and gyro ack");
+                    packet_stage_ = FIRST_HEADER_STAGE;
+                    receive_data_size_ = 1;
+                    break;
+                  }
+                case TEST_CMD:
+                  { 
+                    ROS_INFO("test");
+                    packet_stage_ = FIRST_HEADER_STAGE;
+                    receive_data_size_ = 1;
+                    break;
+                  }
+                default:
+                  {
+                    packet_stage_ = FIRST_HEADER_STAGE;
+                    receive_data_size_ = 1;
+                    ROS_ERROR("wrong msg type");
+                    break;
+                  }
+                }
+            }
+          else
+            {
+              packet_stage_ = FIRST_HEADER_STAGE;
+              receive_data_size_ = 1;
+              ROS_ERROR("msg type bad");
+            }
+          break;
+        }
+      case MSG_DATA_STAGE:
+        {
+          //ROS_INFO("%d", bytes_transferred);
+          uint8_t chksum = 0;
+          for (size_t i = 0; i < bytes_transferred -1 ; i++) 
+            {
+              chksum += comm_buffer_[(int)i];
+              //debug
+              //ROS_INFO("%d, %x", i, comm_buffer_[(int)i]);
+            }
 
-    if((comm_buffer_[0] == 0xff) && (comm_buffer_[1] == 0xff) &&
-       ((255 - chksum %256) == comm_buffer_[bytes_transferred -1]))
-      ROS_INFO(" OKOKOKOKOKO");
+
+          //ROS_INFO("%x, %x", chksum, comm_buffer_[bytes_transferred -1]);
+          
+          if((255 - chksum %256) == comm_buffer_[bytes_transferred -1])
+            {
+              //ROS_INFO("ok");
+
+              if(msg_type_ == IMU_DATA_MSG)
+                {// IMU DATA
+                  jsk_stm::JskImu imu_msg;
+                  imu_msg.header.stamp = ros::Time::now();
+
+                  FloatVectorUnion acc_union , gyro_union, mag_union, angles_union;
+                  FloatUnion alt_union;
+
+                  tf::Quaternion q;
+
+#if 1 // no quternion
+                  for(int i = 0; i < 12; i ++)
+                    {
+                      acc_union.bytes[i] = comm_buffer_[i];
+                      gyro_union.bytes[i] = comm_buffer_[12 + i];
+                      mag_union.bytes[i] = comm_buffer_[24 + i];
+                      angles_union.bytes[i] = comm_buffer_[36 + i];
+                    }
+                  q.setRPY(angles_union.vector[0],angles_union.vector[1],angles_union.vector[2]);
+
+                  for(int i = 0; i < 3; i ++) //degree conversion
+                    angles_union.vector[i] = angles_union.vector[i] * 180 / 3.14;
+
+                  for(int i = 0; i < 4; i ++)
+                    {
+                      alt_union.bytes[i] = comm_buffer_[48 + i];
+                    }
+#else //no mag and alt
+                  for(int i = 0; i < 12; i ++)
+                    {
+                      acc_union.bytes[i] = comm_buffer_[i];
+                      gyro_union.bytes[i] = comm_buffer_[12 + i];
+                      mag_union.bytes[i] = comm_buffer_[24 + i];
+                    }
+
+                  float quaternion[4];
+                  for(int i = 0; i < 4; i ++)
+                    {
+                      quaternion[i] = *((float *)(&comm_buffer_[36 + i*4]));
+                    }
+                  q.setValue(quaternion[1], quaternion[2],quaternion[3], quaternion[0]);
+
+#endif
+                  ros::Time tfStamp = ros::Time::now();
+                  tf::Transform baseToImu;
+
+                  baseToImu.setOrigin(tf::Vector3(0.0, 0.0, 0.0));
+                  baseToImu.setRotation(q);
+                  tfB_->sendTransform(tf::StampedTransform(baseToImu, tfStamp, "base", "imu"));
+
+                  imu_msg.acc_data.x = acc_union.vector[0];
+                  imu_msg.acc_data.y = acc_union.vector[1];
+                  imu_msg.acc_data.z = acc_union.vector[2];
+                  imu_msg.gyro_data.x = gyro_union.vector[0];
+                  imu_msg.gyro_data.y = gyro_union.vector[1];
+                  imu_msg.gyro_data.z = gyro_union.vector[2];
+                  imu_msg.mag_data.x = mag_union.vector[0];
+                  imu_msg.mag_data.y = mag_union.vector[1];
+                  imu_msg.mag_data.z = mag_union.vector[2];
+                  imu_msg.angles.x = angles_union.vector[0];
+                  imu_msg.angles.y = angles_union.vector[1];
+                  imu_msg.angles.z = angles_union.vector[2];
+                  imu_msg.altitude = alt_union.f_data;
+
+                  imu_pub_.publish(imu_msg);
+
+                  /*
+                  sensor_msgs::Imu imu2_data;
+                  imu2_data.header.stamp = ros::Time::now();
+                  imu2_data.header.frame_id = "base";
+                  imu2_data.orientation.w = quaternion[0];
+                  imu2_data.orientation.x = quaternion[1];
+                  imu2_data.orientation.y = quaternion[2];
+                  imu2_data.orientation.z = quaternion[3];
+                  imu2_pub_.publish(imu2_data);
+                  */
+                }
+            }
+          else
+            {
+              ROS_WARN("wrong checksum");
+            }
+
+          packet_stage_ = FIRST_HEADER_STAGE;
+          receive_data_size_ = 1;
+          break;
+        }
+      default:
+        {
+          packet_stage_ = FIRST_HEADER_STAGE;
+          receive_data_size_ = 1;
+          break;
+        }
+      }
+    //ROS_INFO("The bytes is %d", bytes_transferred);
 
     readStart(1000);
 }
 
 void SerialComm::readStart(uint32_t timeout_ms)
 {
+  boost::asio::async_read(comm_port_,boost::asio::buffer(comm_buffer_, receive_data_size_),
+                          boost::bind(&SerialComm::readCallback, this, 
+                                      boost::asio::placeholders::error,
+                                      boost::asio::placeholders::bytes_transferred));
 
-  comm_port_.async_read_some(boost::asio::buffer(comm_buffer_, sizeof(comm_buffer_)),
-                             boost::bind(&SerialComm::readCallback, this, 
-                                         boost::asio::placeholders::error,
-                                         boost::asio::placeholders::bytes_transferred));
+  // boost::asio::async_read(comm_port_,boost::asio::buffer(comm_buffer_, sizeof(comm_buffer_)),
+  //                         boost::asio::transfer_at_least(50),
+  //                   boost::bind(&SerialComm::readCallback, this, boost::asio::placeholders::error,
+  //                               boost::asio::placeholders::bytes_transferred));
+
+
   if (timeout_ms != 0)
     {
       comm_timer_.expires_from_now(boost::posix_time::milliseconds(timeout_ms));
@@ -198,10 +396,9 @@ void SerialComm::terminateCallback(const ros::TimerEvent& timer_event)
 
   if(terminate_start_flag_)
     {
-
+#if 0
       //ROS_WARN("Test");
       comm_connected_ = false;
-
 
       FourElements four_elements;
       four_elements.Elements.roll_cmd = 1.2345;
@@ -216,13 +413,9 @@ void SerialComm::terminateCallback(const ros::TimerEvent& timer_event)
       comm_buffer_[2] = 200;
       comm_buffer_[3] = 255 - comm_buffer_[2] % 256;
 
-#if 1
-      if (test == 0)
-        {
-          test = 0;
+
           uint32_t chksum = 0;
           message_len = 2 + 1 + 1 + 16  + 1; //2head + cmd + cmd_chksum + message +  checksum
-
           for(int i = 0; i < 16; i ++)
             {
               comm_buffer_[i + 4] = four_elements.message[i];
@@ -234,29 +427,6 @@ void SerialComm::terminateCallback(const ros::TimerEvent& timer_event)
             {
               ROS_WARN("Unable to send terminating stop msg over serial port_.");
             }
-        }
-
-#else
-      if (message_len != boost::asio::write(comm_port_, boost::asio::buffer(comm_buffer_, message_len)))
-        {
-          ROS_WARN("Unable to send terminating stop msg over serial port_.");
-        }
-
-      message_len = 16;
-
-      for(int i = 0; i < 16; i ++)
-        {
-          comm_buffer_[i] = four_elements.message[i];
-          //ROS_INFO("comm_buffer[%i], %d", i, comm_buffer_[i]);
-        }
-
-      if (message_len != boost::asio::write(comm_port_, boost::asio::buffer(comm_buffer_, message_len)))
-        {
-          ROS_WARN("Unable to send terminating stop msg over serial port_.");
-        }
-
-
-
 #endif
     }
 }
@@ -275,3 +445,17 @@ void SerialComm::timeoutCallback(const boost::system::error_code& error)
 }
 
 
+void SerialComm::configCmdCallback(const std_msgs::UInt8ConstPtr & msg)
+{
+  uint8_t write_buffer[4];
+  size_t message_len = 4;
+  write_buffer[0] = 0xff;
+  write_buffer[1] = 0xff;
+  write_buffer[2] = msg->data;
+  write_buffer[3] = 255 - write_buffer[2] % 256;
+  // write_buffer[2] = 0;
+  //  write_buffer[3] = 255;
+
+  if (message_len != boost::asio::write(comm_port_, boost::asio::buffer(write_buffer, message_len)))
+    ROS_WARN("Unable to send terminating stop msg over serial port_.");
+}

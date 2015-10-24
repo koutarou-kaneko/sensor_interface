@@ -15,6 +15,7 @@ main(int argc, char** argv)
     int baudrate;
     //nhp.param("baudrate", baudrate, 1382400); => bad
     nhp.param("baudrate", baudrate, 921600);
+    //nhp.param("baudrate", baudrate, 115200);
 
     std::string frame_id;
     nhp.param("frame_id", frame_id, std::string("/world"));
