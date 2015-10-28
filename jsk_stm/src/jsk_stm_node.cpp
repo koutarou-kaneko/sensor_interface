@@ -13,9 +13,9 @@ main(int argc, char** argv)
     nhp.param("serial_port", port_str, std::string("/dev/ttyUSB0"));
 
     int baudrate;
-    //nhp.param("baudrate", baudrate, 1382400); => bad
+    //nhp.param("baudrate", baudrate, 1382400); //=> bad
     nhp.param("baudrate", baudrate, 921600);
-    //nhp.param("baudrate", baudrate, 115200);
+    //nhp.param("baudrate", baudrate, 230400);
 
     std::string frame_id;
     nhp.param("frame_id", frame_id, std::string("/world"));

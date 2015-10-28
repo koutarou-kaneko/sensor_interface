@@ -28,7 +28,9 @@ SerialComm::SerialComm(ros::NodeHandle nh, ros::NodeHandle nhp, const std::strin
   comm_system_id_ =81;
   comm_comp_id_ =50;
 
+  start_flag_ = true;
   terminate_start_flag_ = false;
+
 
   packet_stage_ = FIRST_HEADER_STAGE;
   receive_data_size_ = 1;
@@ -38,8 +40,7 @@ SerialComm::SerialComm(ros::NodeHandle nh, ros::NodeHandle nhp, const std::strin
   //debug
   //terminate_start_flag_ = true;
 
-  
-
+  time_offset = 0;
 }
 
 SerialComm::~SerialComm()
@@ -95,14 +96,12 @@ bool SerialComm::open(const std::string& port_str, int baudrate)
     readStart(1000);
     comm_uart_thread_ = boost::thread(boost::bind(&boost::asio::io_service::run, &comm_uart_service_));
 
-    terminate_timer_ = nhp_.createTimer(ros::Duration(0.005), &SerialComm::terminateCallback, this);
-    // synchronize the time per 5 sec
-    sync_timer_ = nhp_.createTimer(ros::Duration(5.0), &SerialComm::syncCallback, this);
+    tx_timer_ = nhp_.createTimer(ros::Duration(0.01), &SerialComm::txCallback, this);
 
     comm_connected_ = true;
 
     /* シグナルハンドラの設定 */
-    //signal(SIGINT, &SerialComm::signalCatch);
+    signal(SIGINT, &SerialComm::signalCatch);
     return true;
 }
 
@@ -113,8 +112,8 @@ void SerialComm::close(void)
   if(once_flag)
     {
       once_flag = false;
-      comm_timer_.cancel();
-      comm_port_.close();
+      //comm_timer_.cancel();
+      //comm_port_.close();
     }
 }
 
@@ -163,6 +162,7 @@ void SerialComm::readCallback(const boost::system::error_code& error, size_t byt
 
     switch(packet_stage_)
       {
+
       case FIRST_HEADER_STAGE:
         {
           if(comm_buffer_[0] == FIRST_HEADER)
@@ -217,9 +217,38 @@ void SerialComm::readCallback(const boost::system::error_code& error, size_t byt
                     receive_data_size_ = 1;
                     break;
                   }
-                case TEST_CMD:
+                case START_CMD:
                   { 
-                    ROS_INFO("test");
+                    ROS_INFO("start communication");
+                    packet_stage_ = FIRST_HEADER_STAGE;
+                    receive_data_size_ = 1;
+                    start_flag_ = false;
+                    break;
+                  }
+                case END_CMD:
+                  {
+                    if(terminate_start_flag_)
+                      {
+                        ROS_WARN("end communication \n");
+                        ros::shutdown();
+                      }
+                    packet_stage_ = FIRST_HEADER_STAGE;
+                    receive_data_size_ = 1;
+                    break;
+                  }
+                case ROTOR_START_ACK_MSG:
+                  {
+                    ROS_WARN("start control ack\n");
+                    break;
+                  }
+                case ROTOR_STOP_ACK_MSG:
+                  {
+                    ROS_WARN("stop control ack\n");
+                    break;
+                  }
+                case FOUR_ELEMENTS_CMD:
+                  {
+                    ROS_INFO("four elements cmd ack");
                     packet_stage_ = FIRST_HEADER_STAGE;
                     receive_data_size_ = 1;
                     break;
@@ -268,23 +297,34 @@ void SerialComm::readCallback(const boost::system::error_code& error, size_t byt
                   FloatUnion alt_union;
 
                   tf::Quaternion q;
+                  uint64_t time_stamp_int = 0;
 
 #if 1 // no quternion
+                   for(int i = 0; i < 8; i ++)
+                     time_stamp_int |= comm_buffer_[i] << (4*i); // should be | not +
+                   //ROS_INFO("time: %ld", time_stamp_int);
+                  time_stamp_int *=  1000000;
+                   if(time_offset == 0)
+                     {
+                       time_offset = ros::Time::now().toNSec() 
+                         - time_stamp_int;// - 1000000;  //1ms delay
+                     }
+                   imu_msg.header.stamp.fromNSec(time_stamp_int + time_offset );
+                   //ROS_INFO("time: %f", imu_msg.header.stamp.toSec());
+
                   for(int i = 0; i < 12; i ++)
                     {
-                      acc_union.bytes[i] = comm_buffer_[i];
-                      gyro_union.bytes[i] = comm_buffer_[12 + i];
-                      mag_union.bytes[i] = comm_buffer_[24 + i];
-                      angles_union.bytes[i] = comm_buffer_[36 + i];
+                      acc_union.bytes[i] = comm_buffer_[8 + i];
+                      angles_union.bytes[i] = comm_buffer_[20 + i];
                     }
                   q.setRPY(angles_union.vector[0],angles_union.vector[1],angles_union.vector[2]);
 
                   for(int i = 0; i < 3; i ++) //degree conversion
-                    angles_union.vector[i] = angles_union.vector[i] * 180 / 3.14;
+                    angles_union.vector[i] = angles_union.vector[i] * 180 / M_PI;
 
                   for(int i = 0; i < 4; i ++)
                     {
-                      alt_union.bytes[i] = comm_buffer_[48 + i];
+                      alt_union.bytes[i] = comm_buffer_[32 + i];
                     }
 #else //no mag and alt
                   for(int i = 0; i < 12; i ++)
@@ -379,56 +419,83 @@ void SerialComm::readStart(uint32_t timeout_ms)
 }
 
 
-void SerialComm::syncCallback(const ros::TimerEvent& timer_event)
-{
-  if(time_sync_flag_ == 0)
-  {
-    time_sync_flag_ = TIME_SYNC_CALIB_COUNT + 1;
-    sec_offset_ = 0;
-    n_sec_offset_ = 0;
-  }
-}
 
-
-void SerialComm::terminateCallback(const ros::TimerEvent& timer_event)
+void SerialComm::txCallback(const ros::TimerEvent& timer_event)
 {
   static int test = 0;
+  uint8_t write_buffer[21];
+  size_t message_len = 21;
+
+  for(int i = 0; i < message_len; i ++)
+    write_buffer[i] = 0;
+
+
+  if(start_flag_)
+    {
+      write_buffer[0] = 0xff;
+      write_buffer[1] = 0xff;
+      write_buffer[2] = START_CMD;
+      write_buffer[3] = 255 - write_buffer[2] % 256;
+
+      if (message_len != boost::asio::write(comm_port_, boost::asio::buffer(write_buffer, message_len)))
+        ROS_WARN("Unable to send terminating stop msg over serial port_.");
+    }
 
   if(terminate_start_flag_)
     {
-#if 0
-      //ROS_WARN("Test");
-      comm_connected_ = false;
+      write_buffer[0] = 0xff;
+      write_buffer[1] = 0xff;
+      write_buffer[2] = END_CMD;
+      write_buffer[3] = 255 - write_buffer[2] % 256;
 
-      FourElements four_elements;
-      four_elements.Elements.roll_cmd = 1.2345;
-      four_elements.Elements.pitch_cmd = -6.789;
-      four_elements.Elements.yaw_cmd = -0.12121;
-      four_elements.Elements.throttle_cmd = -1234544.23;
+      if (message_len != boost::asio::write(comm_port_, boost::asio::buffer(write_buffer, message_len)))
+        ROS_WARN("Unable to send terminating stop msg over serial port_.");
+    }
+  else
+    {
+        // write_buffer[0] = 0xff;
+        // write_buffer[1] = 0xff;
+        // write_buffer[2] = 64;
+        // write_buffer[3] = 255 - write_buffer[2] % 256;
 
+        // if (message_len != boost::asio::write(comm_port_, boost::asio::buffer(write_buffer, message_len)))
+        //   ROS_WARN("Unable to send terminating stop msg over serial port_.");
 
-      size_t message_len = 3;
-      comm_buffer_[0] = 0xff;
-      comm_buffer_[1] = 0xff;
-      comm_buffer_[2] = 200;
-      comm_buffer_[3] = 255 - comm_buffer_[2] % 256;
+#if 1 //test
 
+      if(!start_flag_)
+        {
+          //comm_connected_ = false;
+
+          FourElements four_elements;
+          four_elements.Elements.roll_cmd = 1.2345;
+          four_elements.Elements.pitch_cmd = -6.789;
+          four_elements.Elements.yaw_cmd = -0.12121;
+          four_elements.Elements.throttle_cmd = -1234544.23;
+
+          write_buffer[0] = 0xff;
+          write_buffer[1] = 0xff;
+          write_buffer[2] = FOUR_ELEMENTS_CMD;
+          write_buffer[3] = 255 - write_buffer[2] % 256;
 
           uint32_t chksum = 0;
-          message_len = 2 + 1 + 1 + 16  + 1; //2head + cmd + cmd_chksum + message +  checksum
+
           for(int i = 0; i < 16; i ++)
             {
-              comm_buffer_[i + 4] = four_elements.message[i];
-              chksum += comm_buffer_[i + 4];
+              write_buffer[i + 4] = four_elements.message[i];
+              chksum += write_buffer[i + 4];
             }
-          comm_buffer_[4 + 16] = 255 - chksum%256;
+          write_buffer[20] = 255 - chksum%256;
 
-          if (message_len != boost::asio::write(comm_port_, boost::asio::buffer(comm_buffer_, message_len)))
+          if (message_len != boost::asio::write(comm_port_, boost::asio::buffer(write_buffer, message_len)))
             {
               ROS_WARN("Unable to send terminating stop msg over serial port_.");
             }
+        }
 #endif
+
     }
+
 }
 
 
@@ -447,14 +514,15 @@ void SerialComm::timeoutCallback(const boost::system::error_code& error)
 
 void SerialComm::configCmdCallback(const std_msgs::UInt8ConstPtr & msg)
 {
-  uint8_t write_buffer[4];
-  size_t message_len = 4;
+
+  uint8_t write_buffer[21];
+  size_t message_len = 21;
+  for(int i = 0; i < message_len; i ++)
+    write_buffer[i] = 0;
   write_buffer[0] = 0xff;
   write_buffer[1] = 0xff;
   write_buffer[2] = msg->data;
   write_buffer[3] = 255 - write_buffer[2] % 256;
-  // write_buffer[2] = 0;
-  //  write_buffer[3] = 255;
 
   if (message_len != boost::asio::write(comm_port_, boost::asio::buffer(write_buffer, message_len)))
     ROS_WARN("Unable to send terminating stop msg over serial port_.");

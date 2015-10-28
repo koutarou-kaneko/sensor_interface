@@ -30,18 +30,21 @@ class SerialComm
   static const uint8_t FIRST_HEADER = 0xff;
   static const uint8_t SECOND_HEADER = 0xff;
 
-  static const uint8_t TEST_CMD = 0x00;
+  static const uint8_t START_CMD = 0x00;
   static const uint8_t MPU_ACC_GYRO_CALIB_CMD = 0x01;
   static const uint8_t MPU_MAG_CALIB_CMD = 0x02;
   static const uint8_t BARO_CALIB_CMD = 0x03;
   static const uint8_t RESET_CALIB_CMD = 0x10;
+  static const uint8_t END_CMD = 0x11;
 
-  static const uint8_t IMU_DATA_MSG = 190;
   static const uint8_t ROTOR_START_ACK_MSG = 0x20;
   static const uint8_t ROTOR_STOP_ACK_MSG = 0x21;
 
+  static const uint8_t IMU_DATA_MSG = 190;
+  static const uint8_t FOUR_ELEMENTS_CMD = 200;
 
-  static const uint8_t IMU_DATA_SIZE = 53; // 4*12 + 4 + 1(chksum)
+  static const uint8_t IMU_DATA_SIZE = 37; // 8 + 2*12 + 4 + 1(chksum)
+  //static const uint8_t IMU_DATA_SIZE = 53; // 4*12 + 4 + 1(chksum)
   //static const uint8_t IMU_DATA_SIZE = 69; // 4*12 + 16 + 4 + 1(chksum)
 
   static const uint8_t FOUR_ELEMNET_CMD = 0x10;
@@ -54,7 +57,6 @@ class SerialComm
   static const uint8_t MSG_TYPE_STAGE = 0x02;
   static const uint8_t MSG_DATA_STAGE = 0x03;
 
-
  private:
   ros::NodeHandle nh_;
   ros::NodeHandle nhp_;
@@ -66,8 +68,7 @@ class SerialComm
 
   void readCallback(const boost::system::error_code& error, size_t bytes_transferred);
   void readStart(uint32_t timeout_ms);
-  void syncCallback(const ros::TimerEvent& timer_event);
-  void terminateCallback(const ros::TimerEvent& timer_event);
+  void txCallback(const ros::TimerEvent& timer_event);
   void timeoutCallback(const boost::system::error_code& error);
 
   void configCmdCallback(const std_msgs::UInt8ConstPtr & msg);
@@ -80,6 +81,8 @@ class SerialComm
   int comm_system_id_;
   int comm_comp_id_;
 
+  unsigned long time_offset;
+
   //uint8_t comm_buffer_[MAX_PACKET_LEN]
   uint8_t comm_buffer_[1024];
     
@@ -88,8 +91,9 @@ class SerialComm
   uint8_t packet_chksum_;
   uint8_t msg_type_;
 
-  ros::Timer sync_timer_;
-  ros::Timer terminate_timer_;
+  ros::Timer tx_timer_;
+
+  bool start_flag_;
 
   bool comm_timeout_;
   int comm_error_count_;
