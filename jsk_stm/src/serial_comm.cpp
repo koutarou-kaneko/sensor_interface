@@ -127,6 +127,7 @@ void SerialComm::signalCatch(int sig)
 
 void SerialComm::readCallback(const boost::system::error_code& error, size_t bytes_transferred)
 {
+  static bool error_receive_flag = false;
     if (error)
     {
         if (error == boost::asio::error::operation_aborted)
@@ -175,7 +176,11 @@ void SerialComm::readCallback(const boost::system::error_code& error, size_t byt
             {
               packet_stage_ = FIRST_HEADER_STAGE;
               receive_data_size_ = 1;
-              ROS_ERROR("first header bad");
+              if(!error_receive_flag)
+                {
+                  ROS_ERROR("first header bad");
+                  error_receive_flag = true;
+                }
             }
           break;
         }
@@ -191,7 +196,11 @@ void SerialComm::readCallback(const boost::system::error_code& error, size_t byt
             {
               packet_stage_ = FIRST_HEADER_STAGE;
               receive_data_size_ = 1;
-              ROS_ERROR("second header bad");
+              if(!error_receive_flag)
+                {
+                  ROS_ERROR("second header bad");
+                  error_receive_flag = true;
+                }
             }
           break;
         }
@@ -257,7 +266,13 @@ void SerialComm::readCallback(const boost::system::error_code& error, size_t byt
                   {
                     packet_stage_ = FIRST_HEADER_STAGE;
                     receive_data_size_ = 1;
-                    ROS_ERROR("wrong msg type");
+
+                    if(!error_receive_flag)
+                      {
+                        ROS_ERROR("wrong msg type");
+                        error_receive_flag = true;
+                      }
+
                     break;
                   }
                 }
@@ -266,7 +281,13 @@ void SerialComm::readCallback(const boost::system::error_code& error, size_t byt
             {
               packet_stage_ = FIRST_HEADER_STAGE;
               receive_data_size_ = 1;
-              ROS_ERROR("msg type bad");
+
+              if(!error_receive_flag)
+                {
+                  ROS_ERROR("msg type bad, cksum wrong");
+                  error_receive_flag = true;
+                }
+
             }
           break;
         }
@@ -376,10 +397,20 @@ void SerialComm::readCallback(const boost::system::error_code& error, size_t byt
                   imu2_pub_.publish(imu2_data);
                   */
                 }
+
+              if(error_receive_flag)
+                {
+                  error_receive_flag = false;
+                  ROS_WARN("restoration");
+                }
             }
           else
             {
-              ROS_WARN("wrong checksum");
+              if(!error_receive_flag)
+                {
+                  ROS_WARN("wrong checksum");
+                  error_receive_flag = true;
+                }
             }
 
           packet_stage_ = FIRST_HEADER_STAGE;
