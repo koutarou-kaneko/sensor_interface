@@ -103,10 +103,10 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
+  INCLUDE_DIRS include
 #  LIBRARIES netusbcam
-#  CATKIN_DEPENDS cv_bridge image_geometry image_transport roscpp sensor_msgs std_msgs
-#  DEPENDS system_lib
+  CATKIN_DEPENDS cv_bridge image_geometry image_transport roscpp sensor_msgs std_msgs
+  DEPENDS system_lib
 )
 
 ###########
@@ -117,8 +117,13 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
+  include
+  ${Boost_INCLUDE_DIR}
   ${catkin_INCLUDE_DIRS}
+  /usr/include
 )
+
+find_library(NETUSBCAM_LIBRARY NETUSBCAM /usr/lib)
 
 ## Declare a C++ library
 # add_library(netusbcam
@@ -131,16 +136,15 @@ include_directories(
 # add_dependencies(netusbcam ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
-# add_executable(netusbcam_node src/netusbcam_node.cpp)
+add_executable(netusbtest_node src/netusbtest.cpp)
+target_link_libraries(netusbtest_node   ${catkin_LIBRARIES}  ${Boost_LIBRARIES} ${NETUSBCAM_LIBRARY})
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 # add_dependencies(netusbcam_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(netusbcam_node
-#   ${catkin_LIBRARIES}
-# )
+
 
 #############
 ## Install ##
