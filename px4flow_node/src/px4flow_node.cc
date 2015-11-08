@@ -64,7 +64,7 @@ main(int argc, char** argv)
 
 #endif
 
-    printTopicInfo();
+    //printTopicInfo();
 
     ros::spin();
     // called by  ros::shutdowno  ( signal handler -> final msg -> ros::shutdown  -> destructor)

@@ -102,8 +102,8 @@ SerialComm::open(const std::string& portStr, int baudrate)
     // set up publishers
     m_optFlowPub = nh.advertise<px_comm::OpticalFlow>("opt_flow", 5);
 
-    image_transport::ImageTransport it(nh);
-    m_imagePub = it.advertise("camera_image", 5);
+    // image_transport::ImageTransport it(nh);
+    // m_imagePub = it.advertise("camera_image", 5);
 
     // set up thread to asynchronously read data from serial port
     readStart(1000);
@@ -266,7 +266,6 @@ SerialComm::readCallback(const boost::system::error_code& error, size_t bytesTra
                   optFlowMsg.velocity_x = flow.flow_comp_m_x;
                   optFlowMsg.velocity_y = flow.flow_comp_m_y;
                   optFlowMsg.quality = flow.quality;
-
 
                   m_optFlowPub.publish(optFlowMsg);
 
