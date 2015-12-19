@@ -17,6 +17,8 @@ SerialComm::SerialComm(ros::NodeHandle nh, ros::NodeHandle nhp, const std::strin
   imu_pub_ = nh_.advertise<jsk_stm::JskImu>("jsk_imu", 5);
   imu2_pub_ = nh_.advertise<sensor_msgs::Imu>("jsk_imu2", 5);
   config_cmd_sub_ = nh_.subscribe<std_msgs::UInt8>("config_cmd", 1, &SerialComm::configCmdCallback, this, ros::TransportHints().tcpNoDelay());
+  pwm_test_cmd_sub_ = nh_.subscribe<std_msgs::UInt16>("pwm_test_cmd", 1, &SerialComm::pwmCmdCallback, this, ros::TransportHints().tcpNoDelay());
+
 
   tfB_ = new tf::TransformBroadcaster();
 
@@ -255,6 +257,11 @@ void SerialComm::readCallback(const boost::system::error_code& error, size_t byt
                     ROS_WARN("stop control ack\n");
                     break;
                   }
+                case PWM_TEST_CMD:
+                  {
+                    ROS_WARN("pwm test ack\n");
+                    break;
+                  }
                 case FOUR_ELEMENTS_CMD:
                   {
                     ROS_INFO("four elements cmd ack");
@@ -315,6 +322,14 @@ void SerialComm::readCallback(const boost::system::error_code& error, size_t byt
                   imu_msg.header.stamp = ros::Time::now();
 
                   FloatVectorUnion acc_union , gyro_union, mag_union, angles_union;
+                  for(int i = 0; i < 3; i++)
+                    {
+                      acc_union.vector[i] = 0;
+                      angles_union.vector[i] = 0;
+                      gyro_union.vector[i] = 0;
+                      mag_union.vector[i] = 0;
+
+                    }
                   FloatUnion alt_union;
 
                   tf::Quaternion q;
@@ -554,6 +569,35 @@ void SerialComm::configCmdCallback(const std_msgs::UInt8ConstPtr & msg)
   write_buffer[1] = 0xff;
   write_buffer[2] = msg->data;
   write_buffer[3] = 255 - write_buffer[2] % 256;
+
+  if (message_len != boost::asio::write(comm_port_, boost::asio::buffer(write_buffer, message_len)))
+    ROS_WARN("Unable to send terminating stop msg over serial port_.");
+}
+
+
+
+void SerialComm::pwmCmdCallback(const std_msgs::UInt16ConstPtr & msg)
+{
+  float duty = (float)(msg->data) / PWM_MAX;
+  uint8_t write_buffer[21];
+  size_t message_len = 21;
+  for(int i = 0; i < message_len; i ++)
+    write_buffer[i] = 0;
+  write_buffer[0] = 0xff;
+  write_buffer[1] = 0xff;
+  write_buffer[2] = PWM_TEST_CMD;
+  write_buffer[3] = 255 - write_buffer[2] % 256;
+  uint8_t duty_temp[] = {0,0,0,0};
+  uint8_t chk_temp = 0;
+  memcpy(&duty_temp, &duty, sizeof(duty));
+  for(int i = 0; i < 4; i++)
+    {
+      write_buffer[4 + i] = duty_temp[i];
+      chk_temp += duty_temp[i];
+    }
+  write_buffer[8] = 255 - chk_temp % 256;
+
+  ROS_WARN("pwm test, duty is %f", duty);
 
   if (message_len != boost::asio::write(comm_port_, boost::asio::buffer(write_buffer, message_len)))
     ROS_WARN("Unable to send terminating stop msg over serial port_.");

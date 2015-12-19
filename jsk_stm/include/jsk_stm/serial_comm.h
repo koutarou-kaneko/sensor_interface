@@ -5,6 +5,7 @@
 // for ros
 #include <ros/ros.h>
 #include <std_msgs/UInt8.h>
+#include <std_msgs/UInt16.h>
 #include <jsk_stm/JskImu.h>
 #include <sensor_msgs/Imu.h>
 #include <tf/transform_broadcaster.h>
@@ -39,6 +40,8 @@ class SerialComm
 
   static const uint8_t ROTOR_START_ACK_MSG = 0x20;
   static const uint8_t ROTOR_STOP_ACK_MSG = 0x21;
+  static const uint8_t PWM_TEST_CMD = 0x30;
+  static const float PWM_MAX = 2000; //2000us
 
   static const uint8_t IMU_DATA_MSG = 190;
   static const uint8_t FOUR_ELEMENTS_CMD = 200;
@@ -63,6 +66,7 @@ class SerialComm
   ros::Publisher  imu_pub_;
   ros::Publisher  imu2_pub_;
   ros::Subscriber  config_cmd_sub_;
+  ros::Subscriber  pwm_test_cmd_sub_;
 
   tf::TransformBroadcaster* tfB_;
 
@@ -72,6 +76,7 @@ class SerialComm
   void timeoutCallback(const boost::system::error_code& error);
 
   void configCmdCallback(const std_msgs::UInt8ConstPtr & msg);
+  void pwmCmdCallback(const std_msgs::UInt16ConstPtr & msg);
 
   boost::asio::io_service comm_uart_service_;
   boost::asio::serial_port comm_port_;
