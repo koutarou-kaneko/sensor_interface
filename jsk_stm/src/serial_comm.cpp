@@ -16,9 +16,11 @@ SerialComm::SerialComm(ros::NodeHandle nh, ros::NodeHandle nhp, const std::strin
 
   imu_pub_ = nh_.advertise<jsk_stm::JskImu>("jsk_imu", 5);
   imu2_pub_ = nh_.advertise<sensor_msgs::Imu>("jsk_imu2", 5);
-  config_cmd_sub_ = nh_.subscribe<std_msgs::UInt8>("config_cmd", 1, &SerialComm::configCmdCallback, this, ros::TransportHints().tcpNoDelay());
+  config_cmd_sub_ = nh_.subscribe<std_msgs::UInt16>("config_cmd", 1, &SerialComm::configCmdCallback, this, ros::TransportHints().tcpNoDelay());
   pwm_test_cmd_sub_ = nh_.subscribe<std_msgs::UInt16>("pwm_test_cmd", 1, &SerialComm::pwmCmdCallback, this, ros::TransportHints().tcpNoDelay());
 
+  //temporarily
+  aerial_robot_control_sub_ = nh_.subscribe<aerial_robot_msgs::RcData>("aerial_robot_control", 1, &SerialComm::aerialRobotControlCmdCallback, this, ros::TransportHints().tcpNoDelay());
 
   tfB_ = new tf::TransformBroadcaster();
 
@@ -247,12 +249,12 @@ void SerialComm::readCallback(const boost::system::error_code& error, size_t byt
                     receive_data_size_ = 1;
                     break;
                   }
-                case ROTOR_START_ACK_MSG:
+                case ROTOR_START_MSG:
                   {
                     ROS_WARN("start control ack\n");
                     break;
                   }
-                case ROTOR_STOP_ACK_MSG:
+                case ROTOR_STOP_MSG:
                   {
                     ROS_WARN("stop control ack\n");
                     break;
@@ -507,7 +509,7 @@ void SerialComm::txCallback(const ros::TimerEvent& timer_event)
         // if (message_len != boost::asio::write(comm_port_, boost::asio::buffer(write_buffer, message_len)))
         //   ROS_WARN("Unable to send terminating stop msg over serial port_.");
 
-#if 1 //test
+#if 0 //test
 
       if(!start_flag_)
         {
@@ -558,7 +560,7 @@ void SerialComm::timeoutCallback(const boost::system::error_code& error)
 }
 
 
-void SerialComm::configCmdCallback(const std_msgs::UInt8ConstPtr & msg)
+void SerialComm::configCmdCallback(const std_msgs::UInt16ConstPtr & msg)
 {
 
   uint8_t write_buffer[21];
@@ -578,9 +580,11 @@ void SerialComm::configCmdCallback(const std_msgs::UInt8ConstPtr & msg)
 
 void SerialComm::pwmCmdCallback(const std_msgs::UInt16ConstPtr & msg)
 {
+
   float duty = (float)(msg->data) / PWM_MAX;
   uint8_t write_buffer[21];
   size_t message_len = 21;
+
   for(int i = 0; i < message_len; i ++)
     write_buffer[i] = 0;
   write_buffer[0] = 0xff;
@@ -602,3 +606,36 @@ void SerialComm::pwmCmdCallback(const std_msgs::UInt16ConstPtr & msg)
   if (message_len != boost::asio::write(comm_port_, boost::asio::buffer(write_buffer, message_len)))
     ROS_WARN("Unable to send terminating stop msg over serial port_.");
 }
+
+void SerialComm::aerialRobotControlCmdCallback(const aerial_robot_msgs::RcDataConstPtr & msg)
+{
+  uint8_t write_buffer[21];
+  size_t message_len = 21;
+
+  FourElements four_elements;
+  four_elements.Elements.roll_cmd = (float)msg->roll;
+  four_elements.Elements.pitch_cmd = (float)msg->pitch;
+  four_elements.Elements.yaw_cmd = (float)msg->yaw;
+  four_elements.Elements.throttle_cmd = (float)msg->throttle;
+
+  write_buffer[0] = 0xff;
+  write_buffer[1] = 0xff;
+  write_buffer[2] = FOUR_ELEMENTS_CMD;
+  write_buffer[3] = 255 - write_buffer[2] % 256;
+
+  uint32_t chksum = 0;
+
+  for(int i = 0; i < 16; i ++)
+    {
+      write_buffer[i + 4] = four_elements.message[i];
+      chksum += write_buffer[i + 4];
+    }
+  write_buffer[20] = 255 - chksum%256;
+
+  if (message_len != boost::asio::write(comm_port_, boost::asio::buffer(write_buffer, message_len)))
+    {
+      ROS_WARN("Unable to send terminating stop msg over serial port_.");
+    }
+}
+
+

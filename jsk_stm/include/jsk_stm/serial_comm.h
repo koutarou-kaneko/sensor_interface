@@ -4,11 +4,14 @@
 
 // for ros
 #include <ros/ros.h>
-#include <std_msgs/UInt8.h>
 #include <std_msgs/UInt16.h>
 #include <jsk_stm/JskImu.h>
 #include <sensor_msgs/Imu.h>
 #include <tf/transform_broadcaster.h>
+
+//for parsing the flight control message
+#include <aerial_robot_msgs/RcData.h> //old 
+#include <aerial_robot_msgs/FourAxisCommand.h>
 
 // for singal handler
 #include <signal.h>
@@ -38,8 +41,8 @@ class SerialComm
   static const uint8_t RESET_CALIB_CMD = 0x10;
   static const uint8_t END_CMD = 0x11;
 
-  static const uint8_t ROTOR_START_ACK_MSG = 0x20;
-  static const uint8_t ROTOR_STOP_ACK_MSG = 0x21;
+  static const uint8_t ROTOR_START_MSG = 0x20;
+  static const uint8_t ROTOR_STOP_MSG = 0x21;
   static const uint8_t PWM_TEST_CMD = 0x30;
   static const float PWM_MAX = 2000; //2000us
 
@@ -66,6 +69,7 @@ class SerialComm
   ros::Publisher  imu_pub_;
   ros::Publisher  imu2_pub_;
   ros::Subscriber  config_cmd_sub_;
+  ros::Subscriber  aerial_robot_control_sub_;
   ros::Subscriber  pwm_test_cmd_sub_;
 
   tf::TransformBroadcaster* tfB_;
@@ -75,8 +79,13 @@ class SerialComm
   void txCallback(const ros::TimerEvent& timer_event);
   void timeoutCallback(const boost::system::error_code& error);
 
-  void configCmdCallback(const std_msgs::UInt8ConstPtr & msg);
+  void configCmdCallback(const std_msgs::UInt16ConstPtr & msg);
   void pwmCmdCallback(const std_msgs::UInt16ConstPtr & msg);
+
+  //temporarily
+  void aerialRobotControlCmdCallback(const aerial_robot_msgs::RcDataConstPtr & msg);
+
+
 
   boost::asio::io_service comm_uart_service_;
   boost::asio::serial_port comm_port_;
@@ -90,7 +99,7 @@ class SerialComm
 
   //uint8_t comm_buffer_[MAX_PACKET_LEN]
   uint8_t comm_buffer_[1024];
-    
+
   uint8_t packet_stage_;
   uint8_t receive_data_size_;
   uint8_t packet_chksum_;
