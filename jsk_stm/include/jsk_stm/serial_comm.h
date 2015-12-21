@@ -49,7 +49,8 @@ class SerialComm
   static const uint8_t IMU_DATA_MSG = 190;
   static const uint8_t FOUR_ELEMENTS_CMD = 200;
 
-  static const uint8_t IMU_DATA_SIZE = 37; // 8 + 2*12 + 4 + 1(chksum)
+  //static const uint8_t IMU_DATA_SIZE =o 37; // 8 + 2*12 + 4 + 1(chksum)
+  static const uint8_t IMU_DATA_SIZE = 61; // 8 + 4*12 + 4 + 1(chksum)
   //static const uint8_t IMU_DATA_SIZE = 53; // 4*12 + 4 + 1(chksum)
   //static const uint8_t IMU_DATA_SIZE = 69; // 4*12 + 16 + 4 + 1(chksum)
 

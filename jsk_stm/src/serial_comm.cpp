@@ -352,8 +352,12 @@ void SerialComm::readCallback(const boost::system::error_code& error, size_t byt
 
                   for(int i = 0; i < 12; i ++)
                     {
-                      acc_union.bytes[i] = comm_buffer_[8 + i];
-                      angles_union.bytes[i] = comm_buffer_[20 + i];
+                      angles_union.bytes[i] = comm_buffer_[8 + i];
+                      acc_union.bytes[i] = comm_buffer_[20 + i];
+                      //addition
+                      gyro_union.bytes[i] = comm_buffer_[32 + i];
+                      mag_union.bytes[i] = comm_buffer_[44 + i];
+
                     }
                   q.setRPY(angles_union.vector[0],angles_union.vector[1],angles_union.vector[2]);
 
@@ -362,7 +366,8 @@ void SerialComm::readCallback(const boost::system::error_code& error, size_t byt
 
                   for(int i = 0; i < 4; i ++)
                     {
-                      alt_union.bytes[i] = comm_buffer_[32 + i];
+                      //alt_union.bytes[i] = comm_buffer_[32 + i];
+                      alt_union.bytes[i] = comm_buffer_[56 + i];
                     }
 #else //no mag and alt
                   for(int i = 0; i < 12; i ++)
@@ -509,7 +514,7 @@ void SerialComm::txCallback(const ros::TimerEvent& timer_event)
         // if (message_len != boost::asio::write(comm_port_, boost::asio::buffer(write_buffer, message_len)))
         //   ROS_WARN("Unable to send terminating stop msg over serial port_.");
 
-#if 0 //test
+#if 1 //test
 
       if(!start_flag_)
         {
