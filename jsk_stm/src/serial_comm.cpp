@@ -21,6 +21,8 @@ SerialComm::SerialComm(ros::NodeHandle nh, ros::NodeHandle nhp, const std::strin
 
   //temporarily
   aerial_robot_control_sub_ = nh_.subscribe<aerial_robot_msgs::RcData>("aerial_robot_control", 1, &SerialComm::aerialRobotControlCmdCallback, this, ros::TransportHints().tcpNoDelay());
+  arming_ack_pub_ = nh_.advertise<std_msgs::Int8>("arming_ack", 1);
+
 
   tfB_ = new tf::TransformBroadcaster();
 
@@ -252,10 +254,17 @@ void SerialComm::readCallback(const boost::system::error_code& error, size_t byt
                 case ROTOR_START_MSG:
                   {
                     ROS_WARN("start control ack\n");
+                    std_msgs::Int8 msg;
+                    msg.data = 1;
+                    arming_ack_pub_.publish(msg);
                     break;
                   }
                 case ROTOR_STOP_MSG:
                   {
+                    ROS_WARN("stop control ack\n");
+                    std_msgs::Int8 msg;
+                    msg.data = 0;
+                    arming_ack_pub_.publish(msg);
                     ROS_WARN("stop control ack\n");
                     break;
                   }
@@ -347,8 +356,9 @@ void SerialComm::readCallback(const boost::system::error_code& error, size_t byt
                        time_offset = ros::Time::now().toNSec() 
                          - time_stamp_int;// - 1000000;  //1ms delay
                      }
-                   imu_msg.header.stamp.fromNSec(time_stamp_int + time_offset );
+                   //imu_msg.header.stamp.fromNSec(time_stamp_int + time_offset );
                    //ROS_INFO("time: %f", imu_msg.header.stamp.toSec());
+                   imu_msg.header.stamp = ros::Time::now();
 
                   for(int i = 0; i < 12; i ++)
                     {
@@ -514,7 +524,7 @@ void SerialComm::txCallback(const ros::TimerEvent& timer_event)
         // if (message_len != boost::asio::write(comm_port_, boost::asio::buffer(write_buffer, message_len)))
         //   ROS_WARN("Unable to send terminating stop msg over serial port_.");
 
-#if 1 //test
+#if 0 //test
 
       if(!start_flag_)
         {
@@ -623,6 +633,7 @@ void SerialComm::aerialRobotControlCmdCallback(const aerial_robot_msgs::RcDataCo
   four_elements.Elements.yaw_cmd = (float)msg->yaw;
   four_elements.Elements.throttle_cmd = (float)msg->throttle;
 
+
   write_buffer[0] = 0xff;
   write_buffer[1] = 0xff;
   write_buffer[2] = FOUR_ELEMENTS_CMD;
@@ -636,6 +647,8 @@ void SerialComm::aerialRobotControlCmdCallback(const aerial_robot_msgs::RcDataCo
       chksum += write_buffer[i + 4];
     }
   write_buffer[20] = 255 - chksum%256;
+
+
 
   if (message_len != boost::asio::write(comm_port_, boost::asio::buffer(write_buffer, message_len)))
     {
