@@ -372,7 +372,8 @@ void SerialComm::readCallback(const boost::system::error_code& error, size_t byt
                   q.setRPY(angles_union.vector[0],angles_union.vector[1],angles_union.vector[2]);
 
                   for(int i = 0; i < 3; i ++) //degree conversion
-                    angles_union.vector[i] = angles_union.vector[i] * 180 / M_PI;
+                    angles_union.vector[i] = angles_union.vector[i];
+                    //angles_union.vector[i] = angles_union.vector[i] * 180 / M_PI;
 
                   for(int i = 0; i < 4; i ++)
                     {
