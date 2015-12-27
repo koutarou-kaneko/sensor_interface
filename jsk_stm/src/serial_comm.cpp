@@ -23,6 +23,7 @@ SerialComm::SerialComm(ros::NodeHandle nh, ros::NodeHandle nhp, const std::strin
   aerial_robot_control_sub_ = nh_.subscribe<aerial_robot_msgs::RcData>("aerial_robot_control", 1, &SerialComm::aerialRobotControlCmdCallback, this, ros::TransportHints().tcpNoDelay());
   arming_ack_pub_ = nh_.advertise<std_msgs::Int8>("arming_ack", 1);
 
+  test_pub_ = nh_.advertise<std_msgs::Float32>("test", 5);
 
   tfB_ = new tf::TransformBroadcaster();
 
@@ -525,17 +526,19 @@ void SerialComm::txCallback(const ros::TimerEvent& timer_event)
         // if (message_len != boost::asio::write(comm_port_, boost::asio::buffer(write_buffer, message_len)))
         //   ROS_WARN("Unable to send terminating stop msg over serial port_.");
 
-#if 0 //test
+#if 1 //test
 
       if(!start_flag_)
         {
+          static float test_data = 0;
+
           //comm_connected_ = false;
 
           FourElements four_elements;
-          four_elements.Elements.roll_cmd = 1.2345;
-          four_elements.Elements.pitch_cmd = -6.789;
-          four_elements.Elements.yaw_cmd = -0.12121;
-          four_elements.Elements.throttle_cmd = -1234544.23;
+          four_elements.Elements.roll_cmd = test_data;
+          four_elements.Elements.pitch_cmd = test_data;
+          four_elements.Elements.yaw_cmd = test_data;
+          four_elements.Elements.throttle_cmd = test_data;
 
           write_buffer[0] = 0xff;
           write_buffer[1] = 0xff;
@@ -555,6 +558,13 @@ void SerialComm::txCallback(const ros::TimerEvent& timer_event)
             {
               ROS_WARN("Unable to send terminating stop msg over serial port_.");
             }
+
+          std_msgs::Float32 test_msg;
+          test_msg.data = test_data;
+          test_pub_.publish(test_msg);
+
+          test_data += 0.1;
+          if(test_data > 100) test_data = 0;
         }
 #endif
 

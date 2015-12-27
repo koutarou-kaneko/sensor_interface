@@ -5,6 +5,7 @@
 // for ros
 #include <ros/ros.h>
 #include <std_msgs/Int8.h>
+#include <std_msgs/Float32.h>
 #include <std_msgs/UInt16.h>
 #include <jsk_stm/JskImu.h>
 #include <sensor_msgs/Imu.h>
@@ -71,6 +72,8 @@ class SerialComm
   ros::Publisher  imu_pub_;
   ros::Publisher  imu2_pub_;
   ros::Subscriber  config_cmd_sub_;
+
+  ros::Publisher  test_pub_;
 
   ros::Subscriber  pwm_test_cmd_sub_;
 
