@@ -12,6 +12,7 @@
 
 //for parsing the flight control message
 #include <aerial_robot_msgs/RcData.h> //old 
+#include <aerial_robot_msgs/RcData2.h>
 #include <aerial_robot_msgs/FourAxisCommand.h>
 
 // for singal handler
@@ -88,7 +89,7 @@ ros::Publisher arming_ack_pub_;
   void pwmCmdCallback(const std_msgs::UInt16ConstPtr & msg);
 
   //temporarily
-  void aerialRobotControlCmdCallback(const aerial_robot_msgs::RcDataConstPtr & msg);
+  void aerialRobotControlCmdCallback(const aerial_robot_msgs::RcData2ConstPtr & msg);
 
 
 

@@ -20,7 +20,7 @@ SerialComm::SerialComm(ros::NodeHandle nh, ros::NodeHandle nhp, const std::strin
   pwm_test_cmd_sub_ = nh_.subscribe<std_msgs::UInt16>("pwm_test_cmd", 1, &SerialComm::pwmCmdCallback, this, ros::TransportHints().tcpNoDelay());
 
   //temporarily
-  aerial_robot_control_sub_ = nh_.subscribe<aerial_robot_msgs::RcData>("aerial_robot_control", 1, &SerialComm::aerialRobotControlCmdCallback, this, ros::TransportHints().tcpNoDelay());
+  aerial_robot_control_sub_ = nh_.subscribe<aerial_robot_msgs::RcData2>("aerial_robot_control", 1, &SerialComm::aerialRobotControlCmdCallback, this, ros::TransportHints().tcpNoDelay());
   arming_ack_pub_ = nh_.advertise<std_msgs::Int8>("arming_ack", 1);
 
 
@@ -623,7 +623,7 @@ void SerialComm::pwmCmdCallback(const std_msgs::UInt16ConstPtr & msg)
     ROS_WARN("Unable to send terminating stop msg over serial port_.");
 }
 
-void SerialComm::aerialRobotControlCmdCallback(const aerial_robot_msgs::RcDataConstPtr & msg)
+void SerialComm::aerialRobotControlCmdCallback(const aerial_robot_msgs::RcData2ConstPtr & msg)
 {
   uint8_t write_buffer[21];
   size_t message_len = 21;
