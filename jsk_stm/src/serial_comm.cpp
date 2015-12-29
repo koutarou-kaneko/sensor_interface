@@ -526,7 +526,7 @@ void SerialComm::txCallback(const ros::TimerEvent& timer_event)
         // if (message_len != boost::asio::write(comm_port_, boost::asio::buffer(write_buffer, message_len)))
         //   ROS_WARN("Unable to send terminating stop msg over serial port_.");
 
-#if 1 //test
+#if 0 //test
 
       if(!start_flag_)
         {
