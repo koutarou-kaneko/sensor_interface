@@ -24,7 +24,6 @@ static int32_t motor[8];
 static int16_t servo[8] = {2000,1060,2000,1500,1500,1500,1500,1500};
 
 
-
 void setup() {
   LEDPIN_PINMODE;
 

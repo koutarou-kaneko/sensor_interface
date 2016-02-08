@@ -6,33 +6,33 @@
 
 #include <std_msgs/String.h>
 #include <std_msgs/Empty.h>
-#include <std_msgs/Int32.h>
+#include <std_msgs/UInt16.h>
 
 
 
-void motor1Cmd( const std_msgs::Int32& cmd)		// callback func.
+void motor1Cmd( const std_msgs::UInt16& cmd)		// callback func.
 {
   motor[0] = cmd.data;
 }
-ros::Subscriber<std_msgs::Int32> sub1Cmd("kduino/motor1_cmd", &motor1Cmd );
+ros::Subscriber<std_msgs::UInt16> sub1Cmd("kduino/motor1_cmd", &motor1Cmd );
 
-void motor2Cmd( const std_msgs::Int32& cmd)		// callback func.
+void motor2Cmd( const std_msgs::UInt16& cmd)		// callback func.
 {
   motor[1] = cmd.data;
 }
-ros::Subscriber<std_msgs::Int32> sub2Cmd("kduino/motor2_cmd", &motor2Cmd );
+ros::Subscriber<std_msgs::UInt16> sub2Cmd("kduino/motor2_cmd", &motor2Cmd );
 
-void motor3Cmd( const std_msgs::Int32& cmd)		// callback func.
+void motor3Cmd( const std_msgs::UInt16& cmd)		// callback func.
 {
   motor[2] = cmd.data;
 }
-ros::Subscriber<std_msgs::Int32> sub3Cmd("kduino/motor3_cmd", &motor3Cmd );
+ros::Subscriber<std_msgs::UInt16> sub3Cmd("kduino/motor3_cmd", &motor3Cmd );
 
-void motor4Cmd( const std_msgs::Int32& cmd)		// callback func.
+void motor4Cmd( const std_msgs::UInt16& cmd)		// callback func.
 {
   motor[3] = cmd.data;
 }
-ros::Subscriber<std_msgs::Int32> sub4Cmd("kduino/motor4_cmd", &motor4Cmd );
+ros::Subscriber<std_msgs::UInt16> sub4Cmd("kduino/motor4_cmd", &motor4Cmd );
 
 
 // nodeHandle

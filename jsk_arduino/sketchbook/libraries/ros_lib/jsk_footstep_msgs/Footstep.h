@@ -26,6 +26,10 @@ namespace jsk_footstep_msgs
       enum { LEFT = 1 };
       enum { REJECTED = 3 };
       enum { APPROVED = 4 };
+      enum { LLEG = 1 };
+      enum { RLEG = 2 };
+      enum { LARM = 5 };
+      enum { RARM = 6 };
 
     Footstep():
       leg(0),
