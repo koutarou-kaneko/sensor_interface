@@ -1,0 +1,5 @@
+Do not write kenshiro_head_imu to kduino.
+
+this kenshiro_head_imu dir includes old imu desription files except files releted to servo.
+kduino files that should be written to kduino are integrated into kduino_imu.
+the servo files should be integrated to kduino_imu dir. 
