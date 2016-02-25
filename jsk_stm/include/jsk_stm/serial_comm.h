@@ -9,6 +9,7 @@
 #include <std_msgs/UInt16.h>
 #include <jsk_stm/JskImu.h>
 #include <sensor_msgs/Imu.h>
+#include <geometry_msgs/Vector3.h>
 #include <tf/transform_broadcaster.h>
 
 //for parsing the flight control message
@@ -47,6 +48,7 @@ class SerialComm
   static const uint8_t ROTOR_START_MSG = 0x20;
   static const uint8_t ROTOR_STOP_MSG = 0x21;
   static const uint8_t PWM_TEST_CMD = 0x30;
+  static const uint8_t DESIRE_ATT_CMD = 0x40;
   static const float PWM_MAX = 2000; //2000us
 
   static const uint8_t IMU_DATA_MSG = 190;
@@ -74,12 +76,13 @@ class SerialComm
   ros::Publisher  imu2_pub_;
   ros::Subscriber  config_cmd_sub_;
 
-  ros::Publisher  test_pub_;
+  ros::Publisher test_pub_;
 
-  ros::Subscriber  pwm_test_cmd_sub_;
+  ros::Subscriber pwm_test_cmd_sub_;
 
-ros::Subscriber  aerial_robot_control_sub_;
-ros::Publisher arming_ack_pub_;
+  ros::Subscriber aerial_robot_control_sub_;
+  ros::Subscriber desire_attitude_sub_;
+  ros::Publisher arming_ack_pub_;
 
   tf::TransformBroadcaster* tfB_;
 
@@ -89,11 +92,10 @@ ros::Publisher arming_ack_pub_;
   void timeoutCallback(const boost::system::error_code& error);
 
   void configCmdCallback(const std_msgs::UInt16ConstPtr & msg);
+
   void pwmCmdCallback(const std_msgs::UInt16ConstPtr & msg);
-
-  //temporarily
+  void desireAttitudeCallback(const geometry_msgs::Vector3ConstPtr& msg);
   void aerialRobotControlCmdCallback(const aerial_robot_msgs::RcData2ConstPtr & msg);
-
 
 
   boost::asio::io_service comm_uart_service_;

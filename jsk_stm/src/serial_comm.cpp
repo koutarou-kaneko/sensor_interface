@@ -19,8 +19,9 @@ SerialComm::SerialComm(ros::NodeHandle nh, ros::NodeHandle nhp, const std::strin
   config_cmd_sub_ = nh_.subscribe<std_msgs::UInt16>("config_cmd", 1, &SerialComm::configCmdCallback, this, ros::TransportHints().tcpNoDelay());
   pwm_test_cmd_sub_ = nh_.subscribe<std_msgs::UInt16>("pwm_test_cmd", 1, &SerialComm::pwmCmdCallback, this, ros::TransportHints().tcpNoDelay());
 
-  //temporarily
   aerial_robot_control_sub_ = nh_.subscribe<aerial_robot_msgs::RcData2>("aerial_robot_control", 1, &SerialComm::aerialRobotControlCmdCallback, this, ros::TransportHints().tcpNoDelay());
+  desire_attitude_sub_ = nh_.subscribe<geometry_msgs::Vector3>("desire_attitude", 1, &SerialComm::desireAttitudeCallback, this, ros::TransportHints().tcpNoDelay());
+
   arming_ack_pub_ = nh_.advertise<std_msgs::Int8>("arming_ack", 1);
 
   test_pub_ = nh_.advertise<std_msgs::Float32>("test", 5);
@@ -660,11 +661,47 @@ void SerialComm::aerialRobotControlCmdCallback(const aerial_robot_msgs::RcData2C
   write_buffer[20] = 255 - chksum%256;
 
 
+  if (message_len != boost::asio::write(comm_port_, boost::asio::buffer(write_buffer, message_len)))
+    {
+      ROS_WARN("Unable to send terminating stop msg over serial port_.");
+    }
+}
+
+void SerialComm::desireAttitudeCallback(const geometry_msgs::Vector3ConstPtr& msg)
+{
+  uint8_t write_buffer[21];
+  size_t message_len = 21;
+
+  uint8_t angle_temp[] = {0,0,0,0};
+  float roll = msg->x;
+  float pitch = msg->y;
+  uint32_t chksum = 0;
+
+  write_buffer[0] = 0xff;
+  write_buffer[1] = 0xff;
+  write_buffer[2] = FOUR_ELEMENTS_CMD;
+  write_buffer[3] = 255 - write_buffer[2] % 256;
+
+  memcpy(&angle_temp, &roll, sizeof(roll));
+  for(int i = 0; i < 4; i ++)
+    {
+      write_buffer[i + 4] = angle_temp[i];
+      chksum += write_buffer[i + 4];
+    }
+
+  memcpy(&angle_temp, &pitch, sizeof(pitch));
+  for(int i = 0; i < 4; i ++)
+    {
+      write_buffer[i + 8] = angle_temp[i];
+      chksum += write_buffer[i + 8];
+    }
+  write_buffer[12] = 255 - chksum%256;
 
   if (message_len != boost::asio::write(comm_port_, boost::asio::buffer(write_buffer, message_len)))
     {
       ROS_WARN("Unable to send terminating stop msg over serial port_.");
     }
+
 }
 
 
