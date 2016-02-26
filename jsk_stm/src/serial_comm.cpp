@@ -15,7 +15,8 @@ SerialComm::SerialComm(ros::NodeHandle nh, ros::NodeHandle nhp, const std::strin
 {
 
   imu_pub_ = nh_.advertise<jsk_stm::JskImu>("jsk_imu", 5);
-  imu2_pub_ = nh_.advertise<sensor_msgs::Imu>("jsk_imu2", 5);
+  //imu2_pub_ = nh_.advertise<sensor_msgs::Imu>("jsk_imu2", 5);
+  rpy_pub_ = nh_.advertise<geometry_msgs::Vector3Stamped>("rpy", 1);
   config_cmd_sub_ = nh_.subscribe<std_msgs::UInt16>("config_cmd", 1, &SerialComm::configCmdCallback, this, ros::TransportHints().tcpNoDelay());
   pwm_test_cmd_sub_ = nh_.subscribe<std_msgs::UInt16>("pwm_test_cmd", 1, &SerialComm::pwmCmdCallback, this, ros::TransportHints().tcpNoDelay());
 
@@ -334,6 +335,9 @@ void SerialComm::readCallback(const boost::system::error_code& error, size_t byt
                   jsk_stm::JskImu imu_msg;
                   imu_msg.header.stamp = ros::Time::now();
 
+                  geometry_msgs::Vector3Stamped rpy_msg;
+                  rpy_msg.header.stamp = ros::Time::now();
+
                   FloatVectorUnion acc_union , gyro_union, mag_union, angles_union;
                   for(int i = 0; i < 3; i++)
                     {
@@ -373,15 +377,18 @@ void SerialComm::readCallback(const boost::system::error_code& error, size_t byt
                     }
                   q.setRPY(angles_union.vector[0],angles_union.vector[1],angles_union.vector[2]);
 
+                  
                   for(int i = 0; i < 3; i ++) //degree conversion
+                    {
                     angles_union.vector[i] = angles_union.vector[i];
-                    //angles_union.vector[i] = angles_union.vector[i] * 180 / M_PI;
-
+                    }
                   for(int i = 0; i < 4; i ++)
                     {
                       //alt_union.bytes[i] = comm_buffer_[32 + i];
                       alt_union.bytes[i] = comm_buffer_[56 + i];
                     }
+
+
 #else //no mag and alt
                   for(int i = 0; i < 12; i ++)
                     {
@@ -420,6 +427,11 @@ void SerialComm::readCallback(const boost::system::error_code& error, size_t byt
                   imu_msg.altitude = alt_union.f_data;
 
                   imu_pub_.publish(imu_msg);
+
+                  rpy_msg.vector.x = imu_msg.angles.x / M_PI * 180;
+                  rpy_msg.vector.y = imu_msg.angles.y / M_PI * 180;
+                  rpy_msg.vector.z = imu_msg.angles.z / M_PI * 180;
+                  rpy_pub_.publish(rpy_msg);
 
                   /*
                   sensor_msgs::Imu imu2_data;
@@ -679,7 +691,7 @@ void SerialComm::desireAttitudeCallback(const geometry_msgs::Vector3ConstPtr& ms
 
   write_buffer[0] = 0xff;
   write_buffer[1] = 0xff;
-  write_buffer[2] = FOUR_ELEMENTS_CMD;
+  write_buffer[2] = DESIRE_ATT_CMD;
   write_buffer[3] = 255 - write_buffer[2] % 256;
 
   memcpy(&angle_temp, &roll, sizeof(roll));

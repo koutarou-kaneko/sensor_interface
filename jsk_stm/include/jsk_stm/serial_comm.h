@@ -11,7 +11,7 @@
 #include <sensor_msgs/Imu.h>
 #include <geometry_msgs/Vector3.h>
 #include <tf/transform_broadcaster.h>
-
+#include <geometry_msgs/Vector3Stamped.h>
 //for parsing the flight control message
 #include <aerial_robot_msgs/RcData.h> //old 
 #include <aerial_robot_msgs/RcData2.h>
@@ -74,6 +74,7 @@ class SerialComm
   ros::NodeHandle nhp_;
   ros::Publisher  imu_pub_;
   ros::Publisher  imu2_pub_;
+  ros::Publisher  rpy_pub_;
   ros::Subscriber  config_cmd_sub_;
 
   ros::Publisher test_pub_;
