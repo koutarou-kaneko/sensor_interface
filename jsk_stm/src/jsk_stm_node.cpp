@@ -20,8 +20,8 @@ main(int argc, char** argv)
     std::string frame_id;
     nhp.param("frame_id", frame_id, std::string("/world"));
 
-    SerialComm* comm;
-    comm = new SerialComm(nh, nhp, frame_id);
+    jsk_stm::SerialComm* comm;
+    comm = new jsk_stm::SerialComm(nh, nhp, frame_id);
     if (!comm->open(port_str, baudrate)) { return -1; }
 
 

@@ -1,5 +1,7 @@
 #include <jsk_stm/serial_comm.h>
 
+using namespace jsk_stm;
+
 bool SerialComm::terminate_start_flag_ = false;
 
 SerialComm::SerialComm(ros::NodeHandle nh, ros::NodeHandle nhp, const std::string& frame_id)
