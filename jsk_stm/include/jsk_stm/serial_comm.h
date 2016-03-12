@@ -21,6 +21,7 @@
 #include <signal.h>
 #include <errno.h>
 
+namespace jsk_stm {
 class SerialComm
 {
  public:
@@ -157,4 +158,5 @@ class SerialComm
 
 
 };
+}
 
