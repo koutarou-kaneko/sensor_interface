@@ -689,6 +689,7 @@ void SerialComm::desireAttitudeCallback(const geometry_msgs::Vector3ConstPtr& ms
   uint8_t angle_temp[] = {0,0,0,0};
   float roll = msg->x;
   float pitch = msg->y;
+  uint8_t abs_rel = (uint8_t)msg->z;
   uint32_t chksum = 0;
 
   write_buffer[0] = 0xff;
@@ -709,7 +710,10 @@ void SerialComm::desireAttitudeCallback(const geometry_msgs::Vector3ConstPtr& ms
       write_buffer[i + 8] = angle_temp[i];
       chksum += write_buffer[i + 8];
     }
-  write_buffer[12] = 255 - chksum%256;
+  write_buffer[12] = abs_rel;
+  chksum += write_buffer[12];
+
+  write_buffer[13] = 255 - chksum%256;
 
   if (message_len != boost::asio::write(comm_port_, boost::asio::buffer(write_buffer, message_len)))
     {
