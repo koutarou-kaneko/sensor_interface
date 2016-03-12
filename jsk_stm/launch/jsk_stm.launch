@@ -8,5 +8,6 @@
 
 <node name="jsk_stm" pkg="jsk_stm" type="jsk_stm_node" respawn="false" launch-prefix="$(arg launch_prefix)" output="screen">
   <param name="serial_port" value="/dev/ttyUSB0" />
+  <param name="baudrate" value="460800" />
 </node>
 </launch>
