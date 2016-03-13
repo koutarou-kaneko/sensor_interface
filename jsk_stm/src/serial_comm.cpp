@@ -325,7 +325,6 @@ void SerialComm::readCallback(const boost::system::error_code& error, size_t byt
               //ROS_INFO("%d, %x", i, comm_buffer_[(int)i]);
             }
 
-
           //ROS_INFO("%x, %x", chksum, comm_buffer_[bytes_transferred -1]);
           
           if((255 - chksum %256) == comm_buffer_[bytes_transferred -1])
@@ -373,8 +372,8 @@ void SerialComm::readCallback(const boost::system::error_code& error, size_t byt
                       angles_union.bytes[i] = comm_buffer_[8 + i];
                       acc_union.bytes[i] = comm_buffer_[20 + i];
                       //addition
-                      gyro_union.bytes[i] = comm_buffer_[32 + i];
-                      mag_union.bytes[i] = comm_buffer_[44 + i];
+                      //gyro_union.bytes[i] = comm_buffer_[32 + i];
+                      //mag_union.bytes[i] = comm_buffer_[44 + i];
 
                     }
                   q.setRPY(angles_union.vector[0],angles_union.vector[1],angles_union.vector[2]);
@@ -386,8 +385,8 @@ void SerialComm::readCallback(const boost::system::error_code& error, size_t byt
                     }
                   for(int i = 0; i < 4; i ++)
                     {
-                      //alt_union.bytes[i] = comm_buffer_[32 + i];
-                      alt_union.bytes[i] = comm_buffer_[56 + i];
+                      alt_union.bytes[i] = comm_buffer_[32 + i];
+                      //alt_union.bytes[i] = comm_buffer_[56 + i];
                     }
 
 
