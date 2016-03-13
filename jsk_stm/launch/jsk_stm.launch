@@ -7,7 +7,6 @@
 <arg if="$(arg debug)" name="launch_prefix" value="gdb --ex run --args" />
 
 <node name="jsk_stm" pkg="jsk_stm" type="jsk_stm_node" respawn="false" launch-prefix="$(arg launch_prefix)" output="screen">
-  <param name="serial_port" value="/dev/ttyUSB1" />
-  <param name="baudrate" value="460800" />
+  <param name="serial_port" value="/dev/ttyUSB0" />
 </node>
 </launch>
