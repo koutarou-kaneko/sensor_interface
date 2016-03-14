@@ -372,22 +372,28 @@ void SerialComm::readCallback(const boost::system::error_code& error, size_t byt
                       angles_union.bytes[i] = comm_buffer_[8 + i];
                       acc_union.bytes[i] = comm_buffer_[20 + i];
                       //addition
-                      //gyro_union.bytes[i] = comm_buffer_[32 + i];
-                      //mag_union.bytes[i] = comm_buffer_[44 + i];
+                      gyro_union.bytes[i] = comm_buffer_[32 + i];
+                      mag_union.bytes[i] = comm_buffer_[44 + i];
 
                     }
                   q.setRPY(angles_union.vector[0],angles_union.vector[1],angles_union.vector[2]);
 
-                  
-                  for(int i = 0; i < 3; i ++) //degree conversion
-                    {
-                    angles_union.vector[i] = angles_union.vector[i];
-                    }
                   for(int i = 0; i < 4; i ++)
                     {
-                      alt_union.bytes[i] = comm_buffer_[32 + i];
-                      //alt_union.bytes[i] = comm_buffer_[56 + i];
+                      //alt_union.bytes[i] = comm_buffer_[32 + i];
+                      alt_union.bytes[i] = comm_buffer_[56 + i];
                     }
+
+#elif 0 //super simplified message
+                  imu_msg.header.stamp = ros::Time::now();
+
+                  for(int i = 0; i < 3; i ++)
+                    {
+                      int16_t angle = 0;
+                      memcpy(&angle, &(comm_buffer_[2 * i]), 2);
+                      angles_union.vector[i] = (float)angle / 10000.0;
+                    }
+                  q.setRPY(angles_union.vector[0],angles_union.vector[1],angles_union.vector[2]);
 
 
 #else //no mag and alt
