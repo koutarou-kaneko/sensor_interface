@@ -20,6 +20,7 @@ SerialComm::SerialComm(ros::NodeHandle nh, ros::NodeHandle nhp, const std::strin
   //imu2_pub_ = nh_.advertise<sensor_msgs::Imu>("jsk_imu2", 5);
   rpy_pub_ = nh_.advertise<geometry_msgs::Vector3Stamped>("rpy", 1);
   config_cmd_sub_ = nh_.subscribe<std_msgs::UInt16>("config_cmd", 1, &SerialComm::configCmdCallback, this, ros::TransportHints().tcpNoDelay());
+  uav_data_sub_ = nh_.subscribe<std_msgs::UInt8>("uav_data", 1, &SerialComm::uavDataCallback, this, ros::TransportHints().tcpNoDelay());
   pwm_test_cmd_sub_ = nh_.subscribe<std_msgs::UInt16>("pwm_test_cmd", 1, &SerialComm::pwmCmdCallback, this, ros::TransportHints().tcpNoDelay());
 
   aerial_robot_control_sub_ = nh_.subscribe<aerial_robot_msgs::RcData2>("aerial_robot_control", 1, &SerialComm::aerialRobotControlCmdCallback, this, ros::TransportHints().tcpNoDelay());
@@ -617,6 +618,24 @@ void SerialComm::configCmdCallback(const std_msgs::UInt16ConstPtr & msg)
   write_buffer[1] = 0xff;
   write_buffer[2] = msg->data;
   write_buffer[3] = 255 - write_buffer[2] % 256;
+
+  if (message_len != boost::asio::write(comm_port_, boost::asio::buffer(write_buffer, message_len)))
+    ROS_WARN("Unable to send terminating stop msg over serial port_.");
+}
+
+void SerialComm::uavDataCallback(const std_msgs::UInt8ConstPtr & msg)
+{
+
+  uint8_t write_buffer[21];
+  size_t message_len = 21;
+  for(int i = 0; i < message_len; i ++)
+    write_buffer[i] = 0;
+  write_buffer[0] = 0xff;
+  write_buffer[1] = 0xff;
+  write_buffer[2] = UAV_DATA_MSG;
+  write_buffer[3] = 255 - write_buffer[2] % 256;
+  write_buffer[4] = msg->data;
+  write_buffer[5] = 255 - write_buffer[4] % 256;
 
   if (message_len != boost::asio::write(comm_port_, boost::asio::buffer(write_buffer, message_len)))
     ROS_WARN("Unable to send terminating stop msg over serial port_.");

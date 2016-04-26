@@ -5,6 +5,7 @@
 // for ros
 #include <ros/ros.h>
 #include <std_msgs/Int8.h>
+#include <std_msgs/UInt8.h>
 #include <std_msgs/Float32.h>
 #include <std_msgs/UInt16.h>
 #include <jsk_stm/JskImu.h>
@@ -53,6 +54,7 @@ class SerialComm
   static const float PWM_MAX = 2000; //2000us
 
   static const uint8_t IMU_DATA_MSG = 190;
+  static const uint8_t UAV_DATA_MSG = 199;
   static const uint8_t FOUR_ELEMENTS_CMD = 200;
 
   //static const uint8_t IMU_DATA_SIZE = 7; // 6 +  1(chksum)
@@ -76,6 +78,7 @@ class SerialComm
   ros::Publisher  imu2_pub_;
   ros::Publisher  rpy_pub_;
   ros::Subscriber  config_cmd_sub_;
+  ros::Subscriber  uav_data_sub_;
 
   ros::Publisher test_pub_;
 
@@ -93,6 +96,7 @@ class SerialComm
   void timeoutCallback(const boost::system::error_code& error);
 
   void configCmdCallback(const std_msgs::UInt16ConstPtr & msg);
+void uavDataCallback(const std_msgs::UInt8ConstPtr & msg);
 
   void pwmCmdCallback(const std_msgs::UInt16ConstPtr & msg);
   void desireAttitudeCallback(const geometry_msgs::Vector3ConstPtr& msg);
