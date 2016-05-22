@@ -4,15 +4,10 @@ project(jsk_stm)
 find_package(catkin REQUIRED COMPONENTS roscpp std_msgs sensor_msgs geometry_msgs message_generation aerial_robot_msgs tf)
 find_package(Boost REQUIRED COMPONENTS thread system signals)
 
-
-add_message_files(FILES JskImu.msg)
-
-generate_messages(DEPENDENCIES std_msgs geometry_msgs)
-
 catkin_package(
   INCLUDE_DIRS include
   #  LIBRARIES jsk_stm
-  CATKIN_DEPENDS roscpp std_msgs geometry_msgs sensor_msgs message_runtime aerial_robot_msgs tf
+  CATKIN_DEPENDS roscpp std_msgs geometry_msgs sensor_msgs aerial_robot_msgs tf
   DEPENDS boost
 )
 
@@ -28,15 +23,15 @@ include_directories(
   include
 )
 
-add_library (serial_comm src/serial_comm.cpp)
-add_dependencies(serial_comm ${PROJECT_NAME}_gencpp)
-target_link_libraries(serial_comm  ${catkin_LIBRARIES}  ${Boost_LIBRARIES})
+add_library (imu_visualization src/imu_visualization.cpp)
+add_dependencies(imu_visualization ${PROJECT_NAME}_gencpp)
+target_link_libraries(imu_visualization  ${catkin_LIBRARIES}  ${Boost_LIBRARIES})
 
-add_executable(jsk_stm_node  src/jsk_stm_node.cpp)
-add_dependencies(jsk_stm_node ${PROJECT_NAME}_gencpp)
-target_link_libraries(jsk_stm_node  ${catkin_LIBRARIES}  ${Boost_LIBRARIES} serial_comm)
+add_executable(imu_visualization_node  src/imu_visualization_node.cpp)
+add_dependencies(imu_visualization_node ${PROJECT_NAME}_gencpp)
+target_link_libraries(imu_visualization_node  ${catkin_LIBRARIES}  ${Boost_LIBRARIES} imu_visualization)
 
-install(TARGETS jsk_stm_node
+install(TARGETS imu_visualization_node
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

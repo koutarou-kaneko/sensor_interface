@@ -2,11 +2,11 @@
 
 <launch>
 
-<arg name="debug" default="false" />
-<arg unless="$(arg debug)" name="launch_prefix" value="" />
-<arg if="$(arg debug)" name="launch_prefix" value="gdb --ex run --args" />
+  <include file="$(find rosserial_stm)/launch/rosserial.launch" >
+    <arg name="port" default="/dev/ttyUSB0" />
+    <arg name="baud" default="921600" />
+  </include>
 
-<node name="jsk_stm" pkg="jsk_stm" type="jsk_stm_node" respawn="false" launch-prefix="$(arg launch_prefix)" output="screen">
-  <param name="serial_port" value="/dev/ttyUSB0" />
-</node>
+  <node name="imu_visualization" pkg="jsk_stm" type="imu_visualization_node" respawn="false"  output="screen">
+  </node>
 </launch>
