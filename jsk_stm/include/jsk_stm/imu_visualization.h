@@ -4,6 +4,7 @@
 #include <ros/ros.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <aerial_robot_msgs/Imu.h>
+#include <aerial_robot_msgs/Imu2.h>
 #include <tf/transform_broadcaster.h>
 #include <sensor_msgs/Imu.h>
 
@@ -17,7 +18,7 @@ class ImuVisualization{
  protected:
   ros::NodeHandle imuVisualizationNodeHandle_;
   ros::NodeHandle imuVisualizationNodeHandlePrivate_;
-  ros::Subscriber imu_data_sub;
+ros::Subscriber imu_data_sub, imu2_data_sub;
   ros::Publisher  imu_visualization_pub;
   ros::Publisher  imu_pub, mag_pub;
 
@@ -45,7 +46,7 @@ class ImuVisualization{
   void rosParamInit(ros::NodeHandle& nh);
   void visualFunction(const ros::TimerEvent & e);
   void imuCallback(const aerial_robot_msgs::ImuConstPtr& imu_msg);
-
+  void imu2Callback(const aerial_robot_msgs::Imu2ConstPtr& imu_msg);
 
   inline void setOrientation(
       geometry_msgs::Pose& pose,
