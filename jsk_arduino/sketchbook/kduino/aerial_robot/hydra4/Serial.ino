@@ -88,10 +88,6 @@ const uint32_t capability = 0+BIND_CAPABLE;
 #define MSP_DEBUGMSG             253   //out message         debug string buffer
 #define MSP_DEBUG                254   //out message         debug1,debug2,debug3,debug4
 
-//for ros start/stop cmd
-#define ROS_ARM_ON_CMD           150   //arming on
-#define ROS_ARM_OFF_CMD          151   //arming off
-#define ROS_INTEGRATE_CMD        160   //integrate flag
 
 
 static uint8_t checksum[UART_NUMBER];

@@ -6,15 +6,21 @@
 
 #include <std_msgs/String.h>
 #include <std_msgs/Empty.h>
-#include <std_msgs/UInt16.h>
+#include <std_msgs/UInt8.h>
 #include <std_msgs/Int8.h>
-#include <aerial_robot_msgs/KduinoSimpleImu.h>
+#include <aerial_robot_msgs/SimpleImu.h>
 #include <aerial_robot_msgs/FourAxisCommand.h> 
 #include <aerial_robot_msgs/RollPitchYawGain.h> 
 #include <aerial_robot_msgs/MotorValue.h> 
 #include <aerial_robot_msgs/ControlTerm.h>
 
 #define ARMING_COUNT 50
+
+//for ros start/stop cmd
+#define ROS_ARM_ON_CMD           0x00   //arming on, old: 150
+#define ROS_ARM_OFF_CMD          0x01   //arming off, old: 151
+#define ROS_INTEGRATE_CMD        160   //integrate flag, old: 160
+
 
 // etc
 unsigned long ros_loop_cnt;
@@ -26,18 +32,18 @@ aerial_robot_msgs::FourAxisCommand rcSet; //buffer for virtual rc command
 ros::NodeHandle nh;
 
 // msg(publisher)
-aerial_robot_msgs::KduinoSimpleImu kduinoImu;
-ros::Publisher pubKduinoImu("kduino/simple_imu", &kduinoImu);
+aerial_robot_msgs::SimpleImu kduinoImu;
+ros::Publisher pubKduinoImu("imu", &kduinoImu);
 
-std_msgs::Int8 armingAck;
-ros::Publisher pubArmingAck("kduino/arming_ack", &armingAck);
+std_msgs::UInt8 armingAck;
+ros::Publisher pubArmingAck("flight_config_ack", &armingAck);
 
 aerial_robot_msgs::MotorValue motorValue;
-ros::Publisher pubMotorValues("kduino/motor_values", &motorValue);
+ros::Publisher pubMotorValues("motor_values", &motorValue);
 
 //debug
 aerial_robot_msgs::ControlTerm controlTerm;
-ros::Publisher pubControlTerms("kduino/control_terms", &controlTerm);
+ros::Publisher pubControlTerms("control_terms", &controlTerm);
 
 // msg(subscriber)
 void cbFourAxisCommand( const aerial_robot_msgs::FourAxisCommand &cmd_msg) 
@@ -52,9 +58,9 @@ void cbFourAxisCommand( const aerial_robot_msgs::FourAxisCommand &cmd_msg)
       throttle_pid_term[i] = cmd_msg.throttle_pid_term[i];
     }
 }
-ros::Subscriber<aerial_robot_msgs::FourAxisCommand> subRc("kduino/rc_cmd", &cbFourAxisCommand);
+ros::Subscriber<aerial_robot_msgs::FourAxisCommand> subRc("aerial_robot_control", &cbFourAxisCommand);
 
-void cbCmd( const std_msgs::UInt16& cmd)		// callback func.
+void cbCmd( const std_msgs::UInt8& cmd)		// callback func.
 {
   bool gain_res_flag = false;
   switch (cmd.data) {
@@ -71,7 +77,7 @@ void cbCmd( const std_msgs::UInt16& cmd)		// callback func.
       {
         resetCommand();
 
-        armingAck.data = 1;
+        armingAck.data = ROS_ARM_ON_CMD;
         pubArmingAck.publish(&armingAck);
       }  
     //f.ACC_CALIBRATED = 1; //should check this!!
@@ -81,7 +87,7 @@ void cbCmd( const std_msgs::UInt16& cmd)		// callback func.
     if(!f.ARMED)
       {
          resetCommand();
-        armingAck.data = 0;
+        armingAck.data = ROS_ARM_OFF_CMD;
         pubArmingAck.publish(&armingAck);
 
       }
@@ -96,7 +102,7 @@ void cbCmd( const std_msgs::UInt16& cmd)		// callback func.
     break;
   }
 }
-ros::Subscriber<std_msgs::UInt16> subCmd("kduino/msp_cmd", &cbCmd );
+ros::Subscriber<std_msgs::UInt8> subCmd("flight_config_cmd", &cbCmd );
 
 
 void cbRPYGain(const aerial_robot_msgs::RollPitchYawGain& hydra_param)
@@ -120,7 +126,7 @@ void cbRPYGain(const aerial_robot_msgs::RollPitchYawGain& hydra_param)
     }
 #endif
 }
-ros::Subscriber<aerial_robot_msgs::RollPitchYawGain> subRPYGain("kduino/rpy_gain", &cbRPYGain);
+ros::Subscriber<aerial_robot_msgs::RollPitchYawGain> subRPYGain("rpy_gain", &cbRPYGain);
 
 
 // setup for ROS
