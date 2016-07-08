@@ -123,7 +123,7 @@ include_directories(
   /usr/include
 )
 
-find_library(NETUSBCAM_LIBRARY NETUSBCAM /usr/lib)
+#find_library(NETUSBCAM_LIBRARY NETUSBCAM /usr/lib)
 
 ## Declare a C++ library
 # add_library(netusbcam
@@ -137,7 +137,7 @@ find_library(NETUSBCAM_LIBRARY NETUSBCAM /usr/lib)
 
 ## Declare a C++ executable
 add_executable(netusbtest_node src/netusbtest.cpp)
-target_link_libraries(netusbtest_node   ${catkin_LIBRARIES}  ${Boost_LIBRARIES} ${NETUSBCAM_LIBRARY})
+target_link_libraries(netusbtest_node  NETUSBCAM ${catkin_LIBRARIES}  ${Boost_LIBRARIES} )
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
