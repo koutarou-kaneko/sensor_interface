@@ -48,6 +48,8 @@ private:
   double distance_;  // distance from the sensor, in meters
   double amplitude_; // signal amplitude
   double time_offset_;
+  double max_range_; //the min value of this sensor
+  double min_range_; //the max value of this sensor
   bool start_connection_;
   bool configure_;
 

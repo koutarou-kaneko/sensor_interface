@@ -7,6 +7,8 @@ LeddarOne::LeddarOne(ros::NodeHandle nh, ros::NodeHandle nhp): nh_(nh), nhp_(nhp
   nhp_.param("baud", baud_, 115200);
   nhp_.param("module_id", module_id_, 1);
   nhp_.param("loop_rate", loop_rate_, 100.0);
+  nhp_.param("min_range", min_range_, 40.0); //40[m]
+  nhp_.param("max_range", max_range_, 40.0); //40[m]
 
   range_pub_ = nh_.advertise<sensor_msgs::Range>("/distance", 10);
 
@@ -114,9 +116,8 @@ void LeddarOne::communicationFunc()
           sensor_msgs::Range range_msg;
           range_msg.header.stamp = ros::Time::now();  // TODO: use time offset
           range_msg.radiation_type = sensor_msgs::Range::INFRARED;
-          range_msg.min_range = 0; // default: 0m
-          //range_msg.max_range = 40; // default: 40m
-          range_msg.max_range = amplitude_; // debug
+          range_msg.min_range = min_range_;
+          range_msg.max_range = max_range_;
           range_msg.range = distance_;
           range_pub_.publish(range_msg);
 

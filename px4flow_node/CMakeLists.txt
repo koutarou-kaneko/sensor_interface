@@ -1,13 +1,12 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(px4flow_node)
 
-find_package(catkin REQUIRED COMPONENTS roscpp std_msgs sensor_msgs image_transport
- px_comm )
+find_package(catkin REQUIRED COMPONENTS roscpp std_msgs geometry_msgs sensor_msgs image_transport)
 find_package(Boost REQUIRED COMPONENTS thread system signals)
 
 catkin_package(
   INCLUDE_DIRS include
-  CATKIN_DEPENDS roscpp std_msgs sensor_msgs image_transport px_comm
+  CATKIN_DEPENDS roscpp std_msgs geometry_msgs sensor_msgs image_transport
   DEPENDS boost
 )
 

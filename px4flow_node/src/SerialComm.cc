@@ -1,8 +1,6 @@
 #include <boost/bind.hpp>
 
-
 // ROS includes
-#include <px_comm/OpticalFlow.h>
 #include <sensor_msgs/image_encodings.h>
 #include <sensor_msgs/Image.h>
 
@@ -45,7 +43,8 @@ SerialComm::SerialComm(const std::string& frameId)
   terminatingStartFlag = false;
   commStartFlag = false;
 
-  //ROS_ERROR("init");
+  prevDistance = 0;
+
 }
 
 SerialComm::~SerialComm()
@@ -99,11 +98,13 @@ SerialComm::open(const std::string& portStr, int baudrate)
     ros::NodeHandle nh("px4flow");
     ros::NodeHandle nh_private("~");
 
-    // set up publishers
-    m_optFlowPub = nh.advertise<px_comm::OpticalFlow>("opt_flow", 5);
+    // rosparam
+    nh_private.param("sonar_min_range", sonar_min_range_, 0.305);
+    nh_private.param("sonar_min_range", sonar_min_range_, 5.0);
 
-    // image_transport::ImageTransport it(nh);
-    // m_imagePub = it.advertise("camera_image", 5);
+    // set up publishers
+    m_optFlowPub = nh.advertise<geometry_msgs::TwistStamped>("opt_flow", 5);
+    m_sonarPub = nh.advertise<sensor_msgs::Range>("sonar", 5);
 
     // set up thread to asynchronously read data from serial port
     readStart(1000);
@@ -131,21 +132,11 @@ SerialComm::close(void)
     {
       onceFlag = false;
 
-
-      // if (!m_connected)
-      //   {
-      //     return;
-      //   }
-
       printf("       close!!1 \n");
       m_timer.cancel();
       m_port.close();
-       // m_uartService.post(boost::bind(&boost::asio::deadline_timer::cancel, &m_timer));
-       // m_uartService.post(boost::bind(&boost::asio::serial_port::close, &m_port));
-       // m_uartThread.join();
       printf("       close!!2 \n");
-      //ros::shutdown();
-      //exit(0);
+
     }
 }
 
@@ -155,7 +146,6 @@ SerialComm::signalCatch(int sig)
   printf("            signal:%d\n", sig);
 
   px::SerialComm::terminatingStartFlag = true;
-  //while(!terminatingStartFlag) {} //terminate flagが立つまで待つ
 }
 
 
@@ -221,25 +211,17 @@ SerialComm::readCallback(const boost::system::error_code& error, size_t bytesTra
                 mavlink_optical_flow_t flow;
                 mavlink_msg_optical_flow_decode(&message, &flow);
 
-
               ros::Time px4Time 
                 = ros::Time(flow.time_usec / 1000000, (flow.time_usec % 1000000) * 1000);
 
-
               if(timeSyncFlag > 0)
                 {
-               
-
                   timeSyncFlag --;
                   if(timeSyncFlag < TIME_SYNC_CALIB_COUNT)
                     {
-                      //printf("%i.",timeSyncFlag);
                       offsetTmp = ros::Time::now().toNSec() - px4Time.toNSec();
                       secOffset  = secOffset +  (offsetTmp / 1000000000UL);
                       nSecOffset = nSecOffset + (offsetTmp % 1000000000UL);
-                      // printf("%i. %ld, %ld , %ld, %ld\n", timeSyncFlag, 
-                      //        offset % 1000000000UL, nSecOffset,
-                      //        offset / 1000000000UL, secOffset);
                     }
                   if(timeSyncFlag == 0)
                     {
@@ -247,29 +229,46 @@ SerialComm::readCallback(const boost::system::error_code& error, size_t bytesTra
                       secOffset /= TIME_SYNC_CALIB_COUNT;
                       nSecOffset /= TIME_SYNC_CALIB_COUNT;
                       offset = secOffset * 1000000000UL + nSecOffset - 8000000; // 0.008のletency
-                      //printf("  time synchronization finished, %ld, %ld\n", nSecOffset, secOffset);
-                      
                     }
                 }
 
               if(commStartFlag)
                 {
-                  px_comm::OpticalFlow optFlowMsg;
+                  //publish the sonar only when sonar change the value
+                  if(prevDistance != flow.ground_distance)
+                    {
+                      sensor_msgs::Range range_msg;
+                      range_msg.header.stamp.fromNSec(px4Time.toNSec() + offset); //temporarily
+                      range_msg.radiation_type = sensor_msgs::Range::ULTRASOUND;
+                      range_msg.min_range = sonar_min_range_;
+                      range_msg.max_range = sonar_max_range_;
+                      range_msg.range = flow.ground_distance;
+                      m_sonarPub.publish(range_msg);
+                    }
 
+                  //publish the optical flow data
                   //optFlowMsg.header.stamp.fromNSec(px4Time.toNSec());
-                  optFlowMsg.header.stamp.fromNSec(px4Time.toNSec() + offset ); //temporarily
-                  //ROS_WARN("time stamp is %lf", optFlowMsg.header.stamp.toSec());
-                  optFlowMsg.header.frame_id = m_frameId;
-                  optFlowMsg.ground_distance = flow.ground_distance;
-                  optFlowMsg.flow_x = flow.flow_x;
-                  optFlowMsg.flow_y = flow.flow_y;
-                  optFlowMsg.velocity_x = flow.flow_comp_m_x;
-                  optFlowMsg.velocity_y = flow.flow_comp_m_y;
-                  optFlowMsg.quality = flow.quality;
-
+                  geometry_msgs::TwistStamped optFlowMsg;
+                  optFlowMsg.header.stamp.fromNSec(px4Time.toNSec() + offset); //temporarily
+                  // linear: add the raw optical flow(is not metric scale, is pixel scale)
+                  optFlowMsg.twist.linear.x = flow.flow_x /1000.0;
+                  optFlowMsg.twist.linear.y = flow.flow_y /1000.0;
+                  optFlowMsg.twist.linear.z = flow.quality;
+                  // angular: add the metric optical flow(this is metric value using the focal length and distance)
+                  optFlowMsg.twist.angular.x = flow.flow_comp_m_x;
+                  optFlowMsg.twist.angular.y = flow.flow_comp_m_y;
+                  optFlowMsg.twist.angular.z = 0; //facal length: this means we have the absolute(metric) value of the optical flow
+                  /////////////////////////////////////////////////
+                  // optFlowMsg.velocity_x = flow.flow_comp_m_x; //
+                  // optFlowMsg.velocity_y = flow.flow_comp_m_y; //
+                  // optFlowMsg.quality = flow.quality;          //
+                  // optFlowMsg.flow_x = flow.flow_x;            //
+                  // optFlowMsg.flow_y = flow.flow_y;            //
+                  /////////////////////////////////////////////////
                   m_optFlowPub.publish(optFlowMsg);
-
                 }
+
+              prevDistance = flow.ground_distance;
                 break;
             }
             case MAVLINK_MSG_ID_DATA_TRANSMISSION_HANDSHAKE:
@@ -341,45 +340,6 @@ SerialComm::readCallback(const boost::system::error_code& error, size_t bytesTra
             }
             case MAVLINK_MSG_ID_ENCAPSULATED_DATA:
             {
-              ROS_WARN(" image msg");
-                if (m_imageSize == 0 || m_imagePackets == 0)
-                {
-                    break;
-                }
-
-                mavlink_encapsulated_data_t img;
-                mavlink_msg_encapsulated_data_decode(&message, &img);
-                size_t seq = img.seqnr;
-                size_t pos = seq * m_imagePayload;
-
-                if (seq + 1 > m_imagePackets)
-                {
-                    break;
-                }
-
-                size_t bytesToCopy = m_imagePayload;
-                if (pos + m_imagePayload >= m_imageSize)
-                {
-                     bytesToCopy = m_imageSize - pos;
-                }
-
-                memcpy(&m_imageBuffer[pos], img.data, bytesToCopy);
-
-                if (seq + 1 == m_imagePackets)
-                {
-                    sensor_msgs::Image image;
-                    image.header.frame_id = m_frameId;
-                    image.height = m_imageHeight;
-                    image.width = m_imageWidth;
-                    image.encoding = sensor_msgs::image_encodings::MONO8;
-                    image.is_bigendian = false;
-                    image.step = m_imageWidth;
-
-                    image.data.resize(m_imageSize);
-                    memcpy(&image.data[0], &m_imageBuffer[0], m_imageSize);
-
-                    m_imagePub.publish(image);
-                }
                 break;
             }
             default:

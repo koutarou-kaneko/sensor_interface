@@ -5,20 +5,19 @@
 #include <pixhawk/mavlink.h>
 
 // ROS includes
-#include <image_transport/image_transport.h>
 #include <ros/ros.h>
-
+#include <sensor_msgs/Range.h>
+#include <geometry_msgs/TwistStamped.h>
 // for singal handler
 #include <signal.h>
 #include <errno.h>
 
-
 namespace px
 {
 
-class SerialComm
-{
-public:
+  class SerialComm
+  {
+  public:
     SerialComm(const std::string& frameId);
     ~SerialComm();
 
@@ -29,7 +28,7 @@ public:
     static bool terminatingStartFlag;
     static const int TIME_SYNC_CALIB_COUNT = 40;
 
-private:
+  private:
     void readCallback(const boost::system::error_code& error, size_t bytesTransferred);
     void readStart(uint32_t timeout_ms);
     void syncCallback(const ros::TimerEvent& timerEvent);
@@ -54,8 +53,7 @@ private:
 
     uint8_t m_buffer[MAVLINK_MAX_PACKET_LEN];
 
-    ros::Publisher m_optFlowPub;
-    image_transport::Publisher m_imagePub;
+    ros::Publisher m_optFlowPub, m_sonarPub;
     std::string m_frameId;
     ros::Timer syncTimer;
     ros::Timer commStartTimer;
@@ -79,6 +77,10 @@ private:
     bool stopGyroMsg;
     bool stopImageMsg;
     bool commStartFlag;
+    float prevDistance;
 
-};
+    double sonar_min_range_;
+    double sonar_max_range_;
+
+  };
 }
