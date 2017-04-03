@@ -27,8 +27,6 @@ target_link_libraries(px4flow_node
   ${catkin_LIBRARIES}
 )
 
-add_dependencies(px4flow_node px_comm_gencpp)
-
 #############                                                                       
 ## Install ##                                                                       
 #############                                                                       
