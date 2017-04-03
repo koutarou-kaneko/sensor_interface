@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<package>
+  <name>sensor_interface</name>
+  <version>1.0.0</version>
+  <description>The sensor_interface package</description>
+
+  <maintainer email="chou@jsk.imi.i.u-tokyo.ac.jp">Moju Zhao</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">http://www.jsk.t.u-tokyo.ac.jp/</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>catkin</buildtool_depend>
+C
+  <run_depend>cfs_sensor</run_depend>
+  <run_depend>jsk_arduino</run_depend>
+  <run_depend>jsk_stm</run_depend>
+  <run_depend>leddar_one</run_depend>
+  <run_depend>takasako_sps</run_depend>
+  <run_depend>px4flow_node</run_depend>
+
+  <export>
+    <metapackage/>
+  </export>
+</package>
