@@ -7,7 +7,6 @@ find_package(Boost REQUIRED COMPONENTS thread system signals)
 catkin_package(
   INCLUDE_DIRS include
   CATKIN_DEPENDS roscpp std_msgs geometry_msgs sensor_msgs image_transport
-  DEPENDS boost
 )
 
 ###########                                                                         

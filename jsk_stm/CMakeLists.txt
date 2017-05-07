@@ -8,7 +8,6 @@ catkin_package(
   INCLUDE_DIRS include
   #  LIBRARIES jsk_stm
   CATKIN_DEPENDS roscpp std_msgs geometry_msgs sensor_msgs aerial_robot_msgs tf
-  DEPENDS boost
 )
 
 ###########
@@ -24,11 +23,9 @@ include_directories(
 )
 
 add_library (imu_visualization src/imu_visualization.cpp)
-add_dependencies(imu_visualization ${PROJECT_NAME}_gencpp)
 target_link_libraries(imu_visualization  ${catkin_LIBRARIES}  ${Boost_LIBRARIES})
 
 add_executable(imu_visualization_node  src/imu_visualization_node.cpp)
-add_dependencies(imu_visualization_node ${PROJECT_NAME}_gencpp)
 target_link_libraries(imu_visualization_node  ${catkin_LIBRARIES}  ${Boost_LIBRARIES} imu_visualization)
 
 install(TARGETS imu_visualization_node

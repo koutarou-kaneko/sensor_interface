@@ -8,7 +8,6 @@ find_package(Boost REQUIRED COMPONENTS  system)
 catkin_package(
   INCLUDE_DIRS include
   CATKIN_DEPENDS roscpp std_msgs
-  DEPENDS boost
 )
 
 ###########
@@ -25,11 +24,9 @@ include_directories(
 
 
 add_executable(cfs_sample  src/sample.c src/rs_comm.c)
-add_dependencies(cfs_sample ${PROJECT_NAME}_gencpp)
 target_link_libraries(cfs_sample  ${catkin_LIBRARIES}  ${Boost_LIBRARIES})
 
 add_executable(cfs_node  src/node.cpp src/rs_comm.cpp)
-add_dependencies(cfs_node ${PROJECT_NAME}_gencpp)
 target_link_libraries(cfs_node  ${catkin_LIBRARIES}  ${Boost_LIBRARIES})
 
 
