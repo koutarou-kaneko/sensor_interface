@@ -7,7 +7,7 @@ LeddarOne::LeddarOne(ros::NodeHandle nh, ros::NodeHandle nhp): nh_(nh), nhp_(nhp
   nhp_.param("baud", baud_, 115200);
   nhp_.param("module_id", module_id_, 1);
   nhp_.param("loop_rate", loop_rate_, 100.0);
-  nhp_.param("min_range", min_range_, 40.0); //40[m]
+  nhp_.param("min_range", min_range_, 0.0); //0[m]
   nhp_.param("max_range", max_range_, 40.0); //40[m]
 
   range_pub_ = nh_.advertise<sensor_msgs::Range>("/distance", 10);
