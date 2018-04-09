@@ -197,7 +197,7 @@ void ImuVisualization::visualFunction(const ros::TimerEvent & e)
 
 /// @brief Imu message callback
 /// @param imu_msgs aerial_robot_msgs::ImuConstPtr
-void ImuVisualization::imuCallback(const aerial_robot_msgs::ImuConstPtr& imu_msg)
+void ImuVisualization::imuCallback(const spinal::ImuConstPtr& imu_msg)
 {
   imuDataStamp = imu_msg->stamp;
 

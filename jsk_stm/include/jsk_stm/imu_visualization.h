@@ -3,7 +3,7 @@
 
 #include <ros/ros.h>
 #include <visualization_msgs/MarkerArray.h>
-#include <aerial_robot_msgs/Imu.h>
+#include <spinal/Imu.h>
 #include <tf/transform_broadcaster.h>
 #include <sensor_msgs/Imu.h>
 
@@ -44,7 +44,7 @@ class ImuVisualization{
 
   void rosParamInit(ros::NodeHandle& nh);
   void visualFunction(const ros::TimerEvent & e);
-  void imuCallback(const aerial_robot_msgs::ImuConstPtr& imu_msg);
+  void imuCallback(const spinal::ImuConstPtr& imu_msg);
 
   inline void setOrientation(
       geometry_msgs::Pose& pose,

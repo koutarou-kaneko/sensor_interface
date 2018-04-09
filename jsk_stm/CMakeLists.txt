@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(jsk_stm)
 
-find_package(catkin REQUIRED COMPONENTS roscpp std_msgs sensor_msgs geometry_msgs message_generation aerial_robot_msgs tf)
+find_package(catkin REQUIRED COMPONENTS roscpp std_msgs sensor_msgs geometry_msgs message_generation spinal tf)
 find_package(Boost REQUIRED COMPONENTS thread system signals)
 
 catkin_package(
   INCLUDE_DIRS include
   #  LIBRARIES jsk_stm
-  CATKIN_DEPENDS roscpp std_msgs geometry_msgs sensor_msgs aerial_robot_msgs tf
+  CATKIN_DEPENDS roscpp std_msgs geometry_msgs sensor_msgs spinal tf
 )
 
 ###########
