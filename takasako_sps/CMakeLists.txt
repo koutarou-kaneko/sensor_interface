@@ -98,7 +98,6 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES scpi_tcp_client
   CATKIN_DEPENDS roscpp
-  DEPENDS system_lib
 )
 
 ###########
