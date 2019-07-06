@@ -13,12 +13,7 @@ namespace Lepton
 {
   namespace SPI
   {
-    int getSpiHander()
-    {
-      return spi_cs_fd;
-    }
-
-    int openPort (char* spi_device)
+    bool openPort (char* spi_device)
     {
       int status_value = -1;
 
@@ -33,74 +28,81 @@ namespace Lepton
       spi_bitsPerWord = 8;
 
       //----- SET SPI BUS SPEED -----
-      spi_speed = 16000000;				//1000000 = 1MHz (1uS per bit)
+      spi_speed = 16000000; //1000000 = 1MHz (1uS per bit)
 
-      if (spi_device)
-        spi_cs_fd = open(std::string(spi_device).c_str(), O_RDWR);
-      else
-        spi_cs_fd = open(std::string("/dev/spidev0.1").c_str(), O_RDWR);
+      spi_cs_fd = open(std::string(spi_device).c_str(), O_RDWR);
 
       if (spi_cs_fd < 0)
         {
-          perror("Error - Could not open SPI device");
-          exit(1);
+          std::cout << "Error - Could not open SPI device" << std::endl;
+          return false;
         }
 
       status_value = ioctl(spi_cs_fd, SPI_IOC_WR_MODE, &spi_mode);
       if(status_value < 0)
         {
-          perror("Could not set SPIMode (WR)...ioctl fail");
-          exit(1);
+          std::cout << "Could not set SPIMode (WR)...ioctl fail" << std::endl;
+          return false;
         }
 
       status_value = ioctl(spi_cs_fd, SPI_IOC_RD_MODE, &spi_mode);
       if(status_value < 0)
         {
-          perror("Could not set SPIMode (RD)...ioctl fail");
-          exit(1);
+          std::cout << "Could not set SPIMode (RD)...ioctl fail" << std::endl;
+          return false;
         }
 
       status_value = ioctl(spi_cs_fd, SPI_IOC_WR_BITS_PER_WORD, &spi_bitsPerWord);
       if(status_value < 0)
         {
-          perror("Could not set SPI bitsPerWord (WR)...ioctl fail");
-          exit(1);
+          std::cout << "Could not set SPI bitsPerWord (WR)...ioctl fail" << std::endl;
+          return false;
         }
 
       status_value = ioctl(spi_cs_fd, SPI_IOC_RD_BITS_PER_WORD, &spi_bitsPerWord);
       if(status_value < 0)
         {
-          perror("Could not set SPI bitsPerWord(RD)...ioctl fail");
-          exit(1);
+          std::cout <<  "Could not set SPI bitsPerWord(RD)...ioctl fail" << std::endl;
+          return false;
         }
 
       status_value = ioctl(spi_cs_fd, SPI_IOC_WR_MAX_SPEED_HZ, &spi_speed);
       if(status_value < 0)
         {
-          perror("Could not set SPI speed (WR)...ioctl fail");
-          exit(1);
+          std::cout << "Could not set SPI speed (WR)...ioctl fail" << std::endl;
+          return false;
         }
 
       status_value = ioctl(spi_cs_fd, SPI_IOC_RD_MAX_SPEED_HZ, &spi_speed);
       if(status_value < 0)
         {
-          perror("Could not set SPI speed (RD)...ioctl fail");
-          exit(1);
+          std::cout << "Could not set SPI speed (RD)...ioctl fail" << std::endl;
+          return false;
         }
-      return(status_value);
+
+      return true;
     }
 
-    int closePort(void)
+    bool closePort(void)
     {
       int status_value = -1;
 
       status_value = close(spi_cs_fd);
       if(status_value < 0)
         {
-          perror("Error - Could not close SPI device");
-          exit(1);
+          std::cout << "Error - Could not close SPI device" << std::endl;
+          return false;
         }
-      return(status_value);
+
+      return true;
+    }
+
+    bool read(uint8_t* buffer_ptr, uint32_t buffer_size)
+    {
+      int ret = ::read(spi_cs_fd, buffer_ptr, buffer_size);
+      if (ret < 0) return false;
+
+      return true;
     }
   };
 };

@@ -14,31 +14,47 @@ namespace Lepton
 {
   namespace I2C
   {
-    int connect() {
-      LEP_OpenPort(1, LEP_CCI_TWI, 400, &port);
+    bool openPort(uint8_t id) {
+      if(LEP_OpenPort(id, LEP_CCI_TWI, 400, &port) != LEP_OK)
+        return false;
+
       connected = true;
-      return 0;
+      return true;
+    }
+
+    bool closePort()
+    {
+      if(LEP_ClosePort(&port) != LEP_OK)
+        return false;
+      return true;
     }
 
     void performFfc() {
-      if(!connected) connect();
+      if(!connected) return;
 
       LEP_RunSysFFCNormalization(&port);
     }
 
     //LEP_SYS_FPA_TEMPERATURE_KELVIN_T lepton_fpa_temperature() {
     int fpaTemperature() {
-      if(!connected)  connect();
+      if(!connected)
+        {
+          std::cout << "I2C is not connected" << std::endl;
+          return 0;
+        }
 
       result = LEP_GetSysFpaTemperatureKelvin(&port, &fpa_temp_kelvin);
       return int(fpa_temp_kelvin);
     }
 
-    //presumably more commands could go here if desired
-    void reboot() {
-      if(!connected) {
-        connect();
-      }
+    void reboot()
+    {
+      if(!connected)
+        {
+          std::cout << "I2C is not connected" << std::endl;
+          return;
+        }
+
       LEP_RunOemReboot(&port);
     }
   };

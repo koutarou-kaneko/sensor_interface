@@ -31,8 +31,8 @@
 namespace
 {
   char const *v4l2dev = "/dev/video1";
+  int i2cdev = 0;
   char *spidev = NULL;
-  int spi_cs_fd = -1;
   int v4l2sink = -1;
   int width = 80;                //640;    // Default for Flash
   int height = 60;        //480;    // Default for Flash
@@ -49,26 +49,31 @@ namespace
   uint8_t result[PACKET_SIZE*PACKETS_PER_FRAME];
   uint16_t *frameBuffer;
 
-
   pthread_t sender;
   sem_t lock1,lock2;
 
   void init_device()
   {
-    Lepton::SPI::openPort(spidev);
-    spi_cs_fd = Lepton::SPI::getSpiHander();
+    if(!Lepton::I2C::openPort(i2cdev))
+      throw std::runtime_error("the I2C port cannot open");
+
+    if(!Lepton::SPI::openPort(spidev))
+      throw std::runtime_error("the SPI port cannot open");
+
+    std::cout << "successd to initialize I2C and SPI" << std::endl;
   }
 
   void stop_device()
   {
     Lepton::SPI::closePort();
+    Lepton::I2C::closePort();
   }
 
   void grab_frame()
   {
     resets = 0;
     for (int j = 0; j < PACKETS_PER_FRAME; j++) {
-        read(spi_cs_fd, result + sizeof(uint8_t) * PACKET_SIZE * j, sizeof(uint8_t) * PACKET_SIZE);
+      Lepton::SPI::read(result + sizeof(uint8_t) * PACKET_SIZE * j, sizeof(uint8_t) * PACKET_SIZE);
         int packetNumber = result[j * PACKET_SIZE + 1];
         if (packetNumber != j) {
             j = -1;
@@ -208,15 +213,16 @@ namespace
     }
   }
 
-  const char short_options [] = "d:hv:t:bgr:";
+  const char short_options [] = "s:i:hv:t:bgr:";
 
   const struct option long_options [] = {
-    { "device",  required_argument, NULL, 'd' },
+    { "spi",  required_argument, NULL, 's' },
+    { "i2c",  required_argument, NULL, 'i' },
     { "help",    no_argument,       NULL, 'h' },
     { "video",   required_argument, NULL, 'v' },
     { "binary",   required_argument, NULL, 'b' },
     { "threshold",   required_argument, NULL, 't' },
-    { "gray",   required_argument, NULL, 'b' },
+    { "gray",   required_argument, NULL, 'g' },
     { "threshold",   required_argument, NULL, 't' },
     { 0, 0, 0, 0 }
   };
@@ -227,8 +233,10 @@ void usage(char *exec)
 {
     printf("Usage: %s [options]\n"
            "Options:\n"
-           "  -d | --device name       Use name as spidev device "
+           "  -s | --spi id       Use name as spidev device "
                "(/dev/spidev0.1 by default)\n"
+           "  -i | --i2c id       Use name as spidev device "
+               "(/dev/i2c-1 by default)\n"
            "  -h | --help              Print this message\n"
            "  -v | --video name        Use name as v4l2loopback device "
                "(%s by default)\n"
@@ -259,8 +267,13 @@ int main(int argc, char **argv)
             case 0:
                 break;
 
-            case 'd':
+            case 's':
+              {
                 spidev = optarg;
+                break;
+              }
+            case 'i':
+                i2cdev = atoi(optarg);
                 break;
 
             case 'h':
