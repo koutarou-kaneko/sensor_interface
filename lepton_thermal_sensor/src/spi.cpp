@@ -13,7 +13,7 @@ namespace Lepton
 {
   namespace SPI
   {
-    bool openPort (char* spi_device)
+    bool openPort (std::string spi_device)
     {
       int status_value = -1;
 
@@ -30,7 +30,7 @@ namespace Lepton
       //----- SET SPI BUS SPEED -----
       spi_speed = 16000000; //1000000 = 1MHz (1uS per bit)
 
-      spi_cs_fd = open(std::string(spi_device).c_str(), O_RDWR);
+      spi_cs_fd = open(spi_device.c_str(), O_RDWR);
 
       if (spi_cs_fd < 0)
         {

@@ -57,7 +57,7 @@ namespace
     if(!Lepton::I2C::openPort(i2cdev))
       throw std::runtime_error("the I2C port cannot open");
 
-    if(!Lepton::SPI::openPort(spidev))
+    if(!Lepton::SPI::openPort(std::string(spidev)))
       throw std::runtime_error("the SPI port cannot open");
 
     std::cout << "successd to initialize I2C and SPI" << std::endl;
@@ -122,6 +122,7 @@ namespace
 
     int fpatemp = Lepton::I2C::fpaTemperature();
     float fpatemp_f = fpatemp/100 *1.8f - 459.67f;
+    //std::cout << "fpa_temp: " << fpatemp_f << std::endl;
 
     auto frameval2celsius = [](float frameval, float fpatemp)
       {
@@ -129,12 +130,14 @@ namespace
         return ((0.05872*frameval-472.22999f+fpatemp) - 32.0f)/1.8f;
       };
 
+    //std::cout << minValue << ", "  << maxValue << std::endl;
     for (int i = 0; i < FRAME_SIZE_UINT16; i++) {
         if (i % PACKET_SIZE_UINT16 < 2) {
             continue;
         }
         value = (frameBuffer[i] - minValue) * scale;
 
+        //std::cout << "value: " << frameBuffer[i] << std::endl;
         column = (i % PACKET_SIZE_UINT16) - 2;
         row = i / PACKET_SIZE_UINT16;
 
