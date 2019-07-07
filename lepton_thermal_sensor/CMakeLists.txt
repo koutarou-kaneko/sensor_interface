@@ -12,8 +12,13 @@ find_package(catkin REQUIRED COMPONENTS
   image_transport
   nodelet
   roscpp
+  dynamic_reconfigure
   sensor_msgs
 )
+
+generate_dynamic_reconfigure_options(
+  cfg/LeptonCamera.cfg
+  )
 
 
 ###################################
@@ -21,9 +26,6 @@ find_package(catkin REQUIRED COMPONENTS
 ###################################
 catkin_package(
   INCLUDE_DIRS include
-#  LIBRARIES lepton_thermal_sensor
-#  CATKIN_DEPENDS roscpp
-#  DEPENDS system_lib
 )
 
 ###########
