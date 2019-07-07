@@ -15,9 +15,10 @@ SensorHandler::~SensorHandler()
 
 const float SensorHandler::getSensorTemperature()
 {
-  /* get reference temperature */
+  /* get reference temperature at focal array in x100 Kelvin */
   int ref_temp = Lepton::I2C::fpaTemperature();
-  return ref_temp/100 * 1.8f - 459.67f;
+
+  return ref_temp/100.0;
 }
 
 void SensorHandler::connect()

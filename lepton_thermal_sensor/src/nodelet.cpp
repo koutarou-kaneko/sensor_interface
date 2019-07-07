@@ -11,6 +11,7 @@
 
 #include <boost/thread.hpp> // Needed for the nodelet to launch the reading thread.
 #include <fstream>
+#include <mutex>
 
 namespace lepton_camera_driver
 {
@@ -70,14 +71,17 @@ namespace lepton_camera_driver
       // Publish topics using ImageTransport through camera_info_manager (gives cool things like compression)
       it_.reset(new image_transport::ImageTransport(nh));
       image_transport::SubscriberStatusCallback cb = boost::bind(&lepton_camera_driver::LeptonThermalSensorNodelet::connectCb, this);
-      it_pub_ = it_->advertiseCamera("image_raw", 5, cb, cb);
+      it_pub_color_ = it_->advertiseCamera("color/image", 5, cb, cb);
+      it_pub_temp_ = it_->advertiseCamera("temperature/image", 5, cb, cb);
     }
 
     void connectCb()
     {
+      std::lock_guard<std::mutex> lock(connect_mutex_);
+
       NODELET_DEBUG("Connect callback!");
       // Check if we should disconnect (there are 0 subscribers to our data)
-      if(it_pub_.getNumSubscribers() == 0)
+      if(it_pub_color_.getNumSubscribers() + it_pub_temp_.getNumSubscribers() == 0)
         {
           if (pubThread_)
             {
@@ -113,8 +117,18 @@ namespace lepton_camera_driver
       State state = DISCONNECTED;
       State previous_state = NONE;
 
-      cv::Mat temperature_map(sh_->getImageSize(), CV_16UC1);
-      cv::Mat thermal_map(sh_->getImageSize(), CV_8UC3);
+      double prev_temp_timestamp = 0;
+      double get_temp_du;
+      double ref_temp;
+      double temp_convert_a, temp_convert_b;
+      ros::NodeHandle &pnh = getMTPrivateNodeHandle();
+      pnh.param("get_temp_du", get_temp_du, 1.0);
+      pnh.param("temp_convert_a", temp_convert_a, 1.0);
+      pnh.param("temp_convert_b", temp_convert_b, 0.0);
+
+      cv::Mat raw_map(sh_->getImageSize(), CV_16UC1); // 16bit raw data
+      cv::Mat thermal_map(sh_->getImageSize(), CV_8UC3); // color data for visualization
+      cv::Mat temp_map(sh_->getImageSize(), CV_16SC1); // temperature (scale: x100 C).
 
       while(!boost::this_thread::interruption_requested())   // Block until we need to stop this thread.
         {
@@ -148,34 +162,18 @@ namespace lepton_camera_driver
                 {
                   double timestamp;
                   NODELET_DEBUG("Starting a new grab from camera.");
-                  if(!sh_->grabImage(temperature_map, timestamp))  return;
-
-
-#if 0
-                  /* get temperature */
-                  auto ref_temp = sh_->getSensorTemperature();
-                  ROS_INFO("board temp: %f", ref_temp);
-
-                  auto frameval2celsius = [](float frameval, float fpatemp)
-                    {
-                      // based on http://takesan.hatenablog.com/entry/2016/02/18/194252
-                      return ((0.05872*frameval-472.22999f+fpatemp) - 32.0f)/1.8f;
-                    };
-
-                  float value_temp = frameval2celsius(frameBuffer[i], fpatemp_f);
-#endif
-
+                  if(!sh_->grabImage(raw_map, timestamp))  return;
 
                   // Publish the message using standard image transport
-                  if(it_pub_.getNumSubscribers() > 0)
+                  if(it_pub_color_.getNumSubscribers() > 0)
                     {
                       double min_val, max_val;
-                      cv::minMaxLoc(temperature_map, &min_val, &max_val);
+                      cv::minMaxLoc(raw_map, &min_val, &max_val);
 
                       thermal_map.forEach<cv::Vec3b>([&](cv::Vec3b &p, const int position[2]) -> void
                         {
-                          uint8_t normalized_val = (temperature_map.ptr<uint16_t>(position[0])[ position[1] ] - min_val ) / (max_val - min_val) * 255.0;
-                          //ROS_INFO("[%d, %d]: %d", position[1], position[0], );
+                          uint8_t normalized_val = (raw_map.ptr<uint16_t>(position[0])[ position[1] ] - min_val ) / (max_val - min_val) * 255.0;
+                          //NODELET_INFO("[%d, %d]: %d", position[1], position[0], );
                           p[0] = Lepton::colorMap(3 * normalized_val);
                           p[1] = Lepton::colorMap(3 * normalized_val + 1);
                           p[2] = Lepton::colorMap(3 * normalized_val + 2);
@@ -183,7 +181,30 @@ namespace lepton_camera_driver
 
                       ci_->header.stamp.fromSec(timestamp);
                       sensor_msgs::ImagePtr img_msg = cv_bridge::CvImage(ci_->header, sensor_msgs::image_encodings::RGB8, thermal_map).toImageMsg();
-                      it_pub_.publish(img_msg, ci_);
+                      it_pub_color_.publish(img_msg, ci_);
+                    }
+
+                  if(it_pub_temp_.getNumSubscribers() > 0)
+                    {
+                      if(ros::Time::now().toSec() - prev_temp_timestamp > get_temp_du)
+                        {
+                          /* get temperature in Kelvin */
+                          ref_temp = sh_->getSensorTemperature();
+                        }
+                      temp_map.forEach<int16_t>([&](int16_t &p, const int position[2]) -> void
+                        {
+                          // TODO: the raw_value-temperature model should be more accurate
+                          // based on http://takesan.hatenablog.com/entry/2016/02/18/194252
+                          p = (temp_convert_a * raw_map.ptr<uint16_t>(position[0])[ position[1] ] + ref_temp + temp_convert_b);
+                        });
+
+                      double min_val, max_val;
+                      cv::minMaxLoc(temp_map, &min_val, &max_val);
+                      //NODELET_INFO("max temp: %f, min temp: %f", max_val, min_val);
+
+                      sensor_msgs::ImagePtr img_msg = cv_bridge::CvImage(ci_->header, sensor_msgs::image_encodings::TYPE_16SC1, temp_map).toImageMsg();
+                      it_pub_temp_.publish(img_msg, ci_);
+
                     }
                 }
               catch(std::runtime_error& e)
@@ -200,10 +221,11 @@ namespace lepton_camera_driver
       NODELET_DEBUG("Leaving thread.");
     }
 
+    std::mutex connect_mutex_;
+
     boost::shared_ptr<image_transport::ImageTransport> it_;
     boost::shared_ptr<camera_info_manager::CameraInfoManager> cinfo_;
-    image_transport::CameraPublisher it_pub_;
-
+    image_transport::CameraPublisher it_pub_color_, it_pub_temp_;
 
     boost::shared_ptr<SensorHandler> sh_; ///< Instance of the PointGreyCamera library, used to interface with the hardware.
     sensor_msgs::CameraInfoPtr ci_; ///< Camera Info message.
