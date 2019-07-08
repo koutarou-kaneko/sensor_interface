@@ -12,7 +12,7 @@ namespace Lepton
 {
   namespace I2C
   {
-    bool openPort(uint8_t id = 1);
+    bool openPort(std::string i2c_dev);
     bool closePort(void);
     void performFfc();
     void reboot();

@@ -14,8 +14,8 @@ namespace Lepton
 {
   namespace I2C
   {
-    bool openPort(uint8_t id) {
-      if(LEP_OpenPort(id, LEP_CCI_TWI, 400, &port) != LEP_OK)
+    bool openPort(std::string i2c_dev) {
+      if(LEP_OpenPort(const_cast<char*>(i2c_dev.c_str()), LEP_CCI_TWI, 400, &port) != LEP_OK)
         return false;
 
       connected = true;

@@ -1,6 +1,6 @@
 #include "lepton_thermal_sensor/sensor_handler.h"
 
-SensorHandler::SensorHandler(int i2c_dev, std::string spi_dev, uint16_t packets_per_frame, uint16_t packet_size, uint8_t head_bytes, uint16_t reboot_max_cnt):
+SensorHandler::SensorHandler(std::string i2c_dev, std::string spi_dev, uint16_t packets_per_frame, uint16_t packet_size, uint8_t head_bytes, uint16_t reboot_max_cnt):
   i2c_dev_(i2c_dev), spi_dev_(spi_dev),
   packets_per_frame_(packets_per_frame), packet_size_(packet_size), head_bytes_(head_bytes),
   connected_(false), wrong_packet_cnt_(0)

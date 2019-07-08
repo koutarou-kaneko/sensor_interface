@@ -48,10 +48,9 @@ namespace lepton_camera_driver
       ros::NodeHandle &pnh = getMTPrivateNodeHandle();
 
       // Get the sensor polling configuration and create the sensor handler
-      std::string spi_dev;
-      int i2c_dev;
+      std::string spi_dev, i2c_dev;
       pnh.param("spi_dev", spi_dev, std::string("/dev/spidev0.1"));
-      pnh.param("i2c_dev", i2c_dev, 0); // i.e., /dev/i2c_dev
+      pnh.param("i2c_dev", i2c_dev, std::string("/dev/i2c-0"));
       int packets_per_frame, packet_size, head_bytes, reboot_max_cnt;
       pnh.param("packets_per_frame", packets_per_frame, 60);
       pnh.param("packet_size", packet_size, 164);

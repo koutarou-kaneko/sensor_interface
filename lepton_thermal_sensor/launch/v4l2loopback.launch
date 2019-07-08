@@ -6,7 +6,7 @@
   <arg name="headless" default="false"/>
 
   <node pkg="lepton_thermal_sensor" type="v4l2lepton_node" name="lepton_v4l2loopback"
-        args="-s /dev/spidev$(arg spi_id) -i $(arg i2c_id) -v /dev/video$(arg video_id) " output="screen" />
+        args="-s /dev/spidev$(arg spi_id) -i /dev/i2c-$(arg i2c_id) -v /dev/video$(arg video_id) " output="screen" />
 
   <node pkg="cv_camera" type="cv_camera_node" name="lepton_camera">
     <param name="device_id" value="$(arg video_id)"/>

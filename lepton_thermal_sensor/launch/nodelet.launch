@@ -9,7 +9,7 @@
     <node pkg="nodelet" type="nodelet" name="camera_nodelet"
           args="load lepton_camera_driver/LeptonThermalSensorNodelet camera_nodelet_manager" output="screen">
       <param name="spi_dev" value="/dev/spidev$(arg spi_id)"/>
-      <param name="i2c_dev" value="(arg i2c_id)"/>
+      <param name="i2c_dev" value="/dev/i2c-$(arg i2c_id)"/>
       <param name="camera" value="$(arg camera)"/>
       <param name="temp_thresh" value="$(arg temp_thresh)"/>
       <param name="camera_info_url" value="file://$(find lepton_thermal_sensor)/config/lepton_camera_parameter.yaml"/>

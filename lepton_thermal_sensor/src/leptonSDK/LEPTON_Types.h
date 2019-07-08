@@ -173,7 +173,7 @@ extern "C"
     */ 
     typedef struct  LEP_CAMERA_PORT_DESC_T_TAG
     {
-        LEP_UINT16  portID;
+        char*  portID;
         LEP_CAMERA_PORT_E   portType;
         LEP_UINT16  portBaudRate;
         LEP_UINT8 deviceAddress;

@@ -240,7 +240,7 @@ LEP_RESULT LEP_RunCommand(LEP_CAMERA_PORT_DESC_T_PTR portDescPtr,
  * This function dynamically allocates a new descriptor from the
  * system heap.
  * 
- * @param portID      LEP_UINT 16  User defined port ID.  This 
+ * @param portID      char*  User defined port ID.  This 
  *                    value is not used by the Lepton SDK but
  *                    provides the ability for
  *                    application-specific use.
@@ -255,7 +255,7 @@ LEP_RESULT LEP_RunCommand(LEP_CAMERA_PORT_DESC_T_PTR portDescPtr,
  * @return LEP_RESULT  Lepton Error Code.  LEP_OK if all goes well,
  *         otherise and Lepton error code is retunred.
  */
-LEP_RESULT LEP_OpenPort(LEP_UINT16 portID,
+LEP_RESULT LEP_OpenPort(char* portID,
                         LEP_CAMERA_PORT_E portType,
                         LEP_UINT16   portBaudRate,
                         LEP_CAMERA_PORT_DESC_T_PTR portDescPtr)

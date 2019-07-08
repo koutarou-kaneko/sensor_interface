@@ -31,7 +31,7 @@
 namespace
 {
   char const *v4l2dev = "/dev/video1";
-  int i2cdev = 0;
+  char *i2cdev = NULL;
   char *spidev = NULL;
   int v4l2sink = -1;
   int width = 80;                //640;    // Default for Flash
@@ -54,7 +54,7 @@ namespace
 
   void init_device()
   {
-    if(!Lepton::I2C::openPort(i2cdev))
+    if(!Lepton::I2C::openPort(std::string(i2cdev)))
       throw std::runtime_error("the I2C port cannot open");
 
     if(!Lepton::SPI::openPort(std::string(spidev)))
@@ -276,7 +276,7 @@ int main(int argc, char **argv)
                 break;
               }
             case 'i':
-                i2cdev = atoi(optarg);
+                i2cdev = optarg;
                 break;
 
             case 'h':

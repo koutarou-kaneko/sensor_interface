@@ -45,7 +45,7 @@ extern "C"
     LEP_RESULT LEP_I2C_SetCommandRegister(LEP_COMMAND_ID commandID, 
                                           LEP_UINT16 *transactionStatus);
 
-    extern LEP_RESULT LEP_I2C_OpenPort(LEP_UINT16 portID,
+    extern LEP_RESULT LEP_I2C_OpenPort(char* portID,
                                        LEP_UINT16 *baudRateInkHz,
                                        LEP_UINT8 *deviceAddress);
 

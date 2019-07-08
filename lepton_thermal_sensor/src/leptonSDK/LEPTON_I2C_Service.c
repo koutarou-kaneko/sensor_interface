@@ -105,7 +105,7 @@
 
 /* Driver Open
 */ 
-LEP_RESULT LEP_I2C_MasterOpen(LEP_UINT16 portID, 
+LEP_RESULT LEP_I2C_MasterOpen(char* portID,
                               LEP_UINT16 *portBaudRate)
 {
     LEP_RESULT result;
@@ -156,8 +156,7 @@ LEP_RESULT LEP_I2C_MasterReset(LEP_CAMERA_PORT_DESC_T_PTR portDescriptorPtr )
  * 
  * @return 
  */
-LEP_RESULT LEP_I2C_MasterReadData(LEP_UINT16 portID,
-                                  LEP_UINT8  deviceAddress, 
+LEP_RESULT LEP_I2C_MasterReadData(LEP_UINT8  deviceAddress, 
                                   LEP_UINT16 subAddress, 
                                   LEP_UINT16 *dataPtr,
                                   LEP_UINT16 dataLength)
@@ -166,8 +165,7 @@ LEP_RESULT LEP_I2C_MasterReadData(LEP_UINT16 portID,
     LEP_UINT16 transactionStatus;
     LEP_UINT16 numWordsRead;
 
-    result = DEV_I2C_MasterReadData(portID,
-                                    deviceAddress,
+    result = DEV_I2C_MasterReadData(deviceAddress,
                                     subAddress,
                                     dataPtr,
                                     dataLength,
@@ -191,8 +189,7 @@ LEP_RESULT LEP_I2C_MasterReadData(LEP_UINT16 portID,
  * 
  * @return LEP_RESULT   LEP_OK if all goes well; otherwise a Lepton error code.
  */
-LEP_RESULT LEP_I2C_MasterWriteData(LEP_UINT16 portID,
-                                   LEP_UINT8  deviceAddress, 
+LEP_RESULT LEP_I2C_MasterWriteData(LEP_UINT8  deviceAddress, 
                                    LEP_UINT16 subAddress, 
                                    LEP_UINT16 *dataPtr,
                                    LEP_UINT16 dataLength)
@@ -201,8 +198,7 @@ LEP_RESULT LEP_I2C_MasterWriteData(LEP_UINT16 portID,
     LEP_UINT16 transactionStatus;
     LEP_UINT16 numWordsWritten;
 
-    result = DEV_I2C_MasterWriteData(portID,
-                                     deviceAddress,
+    result = DEV_I2C_MasterWriteData(deviceAddress,
                                      subAddress,
                                      dataPtr,
                                      dataLength,
@@ -213,16 +209,14 @@ LEP_RESULT LEP_I2C_MasterWriteData(LEP_UINT16 portID,
 }
 
 
-LEP_RESULT LEP_I2C_MasterReadRegister(LEP_UINT16 portID,
-                                      LEP_UINT8  deviceAddress, 
+LEP_RESULT LEP_I2C_MasterReadRegister(LEP_UINT8  deviceAddress, 
                                       LEP_UINT16 regAddress,
                                       LEP_UINT16 *regValue)
 {
     LEP_RESULT result = LEP_OK;
     LEP_UINT16 transactionStatus;
 
-    result = DEV_I2C_MasterReadRegister(portID,
-                                        deviceAddress,
+    result = DEV_I2C_MasterReadRegister(deviceAddress,
                                         regAddress,
                                         regValue,
                                         &transactionStatus
@@ -231,16 +225,14 @@ LEP_RESULT LEP_I2C_MasterReadRegister(LEP_UINT16 portID,
 }
 
 
-LEP_RESULT LEP_I2C_MasterWriteRegister(LEP_UINT16 portID,
-                                       LEP_UINT8  deviceAddress, 
+LEP_RESULT LEP_I2C_MasterWriteRegister(LEP_UINT8  deviceAddress, 
                                        LEP_UINT16 regAddress,
                                        LEP_UINT16 regValue)
 {
     LEP_RESULT result = LEP_OK;
     LEP_UINT16 transactionStatus;
 
-    result = DEV_I2C_MasterWriteRegister(portID,
-                                         deviceAddress,
+    result = DEV_I2C_MasterWriteRegister(deviceAddress,
                                          regAddress,
                                          regValue,
                                          &transactionStatus
@@ -251,8 +243,7 @@ LEP_RESULT LEP_I2C_MasterWriteRegister(LEP_UINT16 portID,
 
 /* Driver Status
 */ 
-LEP_RESULT LEP_I2C_MasterStatus(LEP_UINT16 portID,
-                                LEP_UINT16 *portStatus )
+LEP_RESULT LEP_I2C_MasterStatus(LEP_UINT16 *portStatus )
 {
     LEP_RESULT result = LEP_OK;
 

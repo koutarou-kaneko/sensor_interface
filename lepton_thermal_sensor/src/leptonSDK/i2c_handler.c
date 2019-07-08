@@ -12,8 +12,7 @@
 /******************************************************************************/
 /** LOCAL DEFINES                                                            **/
 /******************************************************************************/
-int leptonDevice0;
-int leptonDevice1;
+int leptonDevice;
 
 const LEP_INT32 ADDRESS_SIZE_BYTES = 2;
 const LEP_INT32 VALUE_SIZE_BYTES = 2;
@@ -45,7 +44,7 @@ const LEP_INT32 comm_timeout_ms = 500;
 /**
  * Performs I2C Master Initialization
  * 
- * @param portID     LEP_UINT16  User specified port ID tag.  Can be used to
+ * @param portID     char* string  User specified port ID tag.  Can be used to
  *                   select between multiple cameras
  * 
  * @param BaudRate   Clock speed in kHz. Typically this is 400.
@@ -55,7 +54,7 @@ const LEP_INT32 comm_timeout_ms = 500;
  * 
  * @return LEP_RESULT  0 if all goes well, errno otherwise
  */
-LEP_RESULT DEV_I2C_MasterInit(LEP_UINT16 portID, 
+LEP_RESULT DEV_I2C_MasterInit(char* portID, 
                               LEP_UINT16 *BaudRate)
 {
     LEP_RESULT result = LEP_OK;
@@ -77,15 +76,7 @@ LEP_RESULT DEV_I2C_MasterInit(LEP_UINT16 portID,
    //aa_target_power(handle, AA_TARGET_POWER_BOTH);
 
     //do it live!
-   
-    int leptonDevice;
-    if(portID) {
-	leptonDevice1 = open("/dev/i2c-1", O_RDWR);
-	leptonDevice = leptonDevice1;
-   } else {
-	leptonDevice0 = open("/dev/i2c-0", O_RDWR);
-	leptonDevice = leptonDevice0;
-   }
+   leptonDevice = open(portID, O_RDWR);
 
     if(leptonDevice < 0) {
 	//we have problem connecting
@@ -130,8 +121,7 @@ LEP_RESULT DEV_I2C_MasterReset(void )
     return(result);
 }
 
-LEP_RESULT DEV_I2C_MasterReadData(LEP_UINT16  portID,               // User-defined port ID
-                                  LEP_UINT8   deviceAddress,        // Lepton Camera I2C Device Address
+LEP_RESULT DEV_I2C_MasterReadData(LEP_UINT8   deviceAddress,        // Lepton Camera I2C Device Address
                                   LEP_UINT16  regAddress,           // Lepton Register Address
                                   LEP_UINT16 *readDataPtr,          // Read DATA buffer pointer
                                   LEP_UINT16  wordsToRead,          // Number of 16-bit words to Read
@@ -156,19 +146,8 @@ LEP_RESULT DEV_I2C_MasterReadData(LEP_UINT16  portID,               // User-defi
 
    *(LEP_UINT16*)txdata = REVERSE_ENDIENESS_UINT16(regAddress);
 
-   //raspi_result = aa_i2c_write_read(handle, deviceAddress, AA_I2C_NO_FLAGS, 
-   //            bytesToWrite, txdata, &bytesActuallyWritten, //write params
-   //            bytesToRead, rxdata, &bytesActuallyRead); //read params
-
    //DONE: here we do a raspi raspi_i2c_write_read
    //this means writing the register, then reading bytes!
-   int leptonDevice;
-   if(portID) {
-	leptonDevice = leptonDevice1;
-   } else {
-	leptonDevice = leptonDevice0;
-   }
-
    int writeValue = write(leptonDevice, txdata, bytesToWrite);
    if(writeValue < 0) {
 	//we have error!
@@ -213,15 +192,14 @@ LEP_RESULT DEV_I2C_MasterReadData(LEP_UINT16  portID,               // User-defi
    return(result);
 }
 
-LEP_RESULT DEV_I2C_MasterWriteData(LEP_UINT16  portID,              // User-defined port ID
-                                   LEP_UINT8   deviceAddress,       // Lepton Camera I2C Device Address
+LEP_RESULT DEV_I2C_MasterWriteData(LEP_UINT8   deviceAddress,       // Lepton Camera I2C Device Address
                                    LEP_UINT16  regAddress,          // Lepton Register Address
                                    LEP_UINT16 *writeDataPtr,        // Write DATA buffer pointer
                                    LEP_UINT16  wordsToWrite,        // Number of 16-bit words to Write
                                    LEP_UINT16 *numWordsWritten,     // Number of 16-bit words actually written
                                    LEP_UINT16 *status)              // Transaction Status
 {
-    LEP_RESULT result = LEP_OK;
+  LEP_RESULT result = LEP_OK;
    
    int raspi_result;
    
@@ -239,18 +217,6 @@ LEP_RESULT DEV_I2C_MasterWriteData(LEP_UINT16  portID,              // User-defi
       *txPtr++ = (LEP_UINT16)REVERSE_ENDIENESS_UINT16(*dataPtr);
       dataPtr++;
    }
-
-   //raspi_result = aa_i2c_write(handle, device_addr, AA_I2C_NO_FLAGS, bytesToWrite, (LEP_UINT8*)writeDataPtr);
-   
-    //DONE: here we do raspi_i2c_write_ext
-    //raspi_result = aa_i2c_write_ext(handle, deviceAddress, AA_I2C_NO_FLAGS, bytesToWrite, (LEP_UINT8*)txdata, (u16*)&bytesActuallyWritten);
-    
-    int leptonDevice;
-    if(portID) {
-	leptonDevice = leptonDevice1;
-    } else {
-	leptonDevice = leptonDevice0;
-    }
 
     bytesActuallyWritten = write(leptonDevice, (LEP_UINT8*)txdata, bytesToWrite);
 
@@ -274,8 +240,7 @@ LEP_RESULT DEV_I2C_MasterWriteData(LEP_UINT16  portID,              // User-defi
    return(result);
 }
 
-LEP_RESULT DEV_I2C_MasterReadRegister( LEP_UINT16 portID,
-                                       LEP_UINT8  deviceAddress, 
+LEP_RESULT DEV_I2C_MasterReadRegister( LEP_UINT8  deviceAddress,
                                        LEP_UINT16 regAddress,
                                        LEP_UINT16 *regValue,     // Number of 16-bit words actually written
                                        LEP_UINT16 *status
@@ -286,13 +251,12 @@ LEP_RESULT DEV_I2C_MasterReadRegister( LEP_UINT16 portID,
    LEP_UINT16 wordsActuallyRead;
     /* Place Device-Specific Interface here
     */ 
-   result = DEV_I2C_MasterReadData(portID, deviceAddress, regAddress, regValue, 1 /*1 word*/, &wordsActuallyRead, status);
+   result = DEV_I2C_MasterReadData(deviceAddress, regAddress, regValue, 1 /*1 word*/, &wordsActuallyRead, status);
 
    return(result);
 }
 
-LEP_RESULT DEV_I2C_MasterWriteRegister( LEP_UINT16 portID,
-                                        LEP_UINT8  deviceAddress, 
+LEP_RESULT DEV_I2C_MasterWriteRegister( LEP_UINT8  deviceAddress,
                                         LEP_UINT16 regAddress,
                                         LEP_UINT16 regValue,     // Number of 16-bit words actually written
                                         LEP_UINT16 *status
@@ -302,7 +266,7 @@ LEP_RESULT DEV_I2C_MasterWriteRegister( LEP_UINT16 portID,
    LEP_UINT16 wordsActuallyWritten;
     /* Place Device-Specific Interface here
     */ 
-   result = DEV_I2C_MasterWriteData(portID, deviceAddress, regAddress, &regValue, 1, &wordsActuallyWritten, status);
+   result = DEV_I2C_MasterWriteData(deviceAddress, regAddress, &regValue, 1, &wordsActuallyWritten, status);
 
    return(result);
 }

@@ -13,7 +13,7 @@ class SensorHandler
 {
 
 public:
-  SensorHandler(int i2c_dev, std::string spi_dev, uint16_t packets_per_frame = 60, uint16_t packet_size = 164, uint8_t head_bytes = 4, uint16_t reboot_max_cnt = 750);
+  SensorHandler(std::string i2c_dev, std::string spi_dev, uint16_t packets_per_frame = 60, uint16_t packet_size = 164, uint8_t head_bytes = 4, uint16_t reboot_max_cnt = 750);
   ~SensorHandler();
 
   void connect();
@@ -26,7 +26,7 @@ public:
   const cv::Size getImageSize() {return cv::Size((packet_size_- head_bytes_)/2, packets_per_frame_);}
 
 private:
-  int i2c_dev_;
+  std::string i2c_dev_;
   std::string spi_dev_;
 
   bool connected_;
