@@ -1,5 +1,6 @@
 <launch>
   <arg name="spi_id" default="1.0"/>
+  <arg name="spi_speed" default="1000000"/>
   <arg name="i2c_id" default="0"/>
   <arg name="camera" default="lepton_camera"/>
   <arg name="temp_thresh" default="40"/>
@@ -9,6 +10,7 @@
     <node pkg="nodelet" type="nodelet" name="camera_nodelet"
           args="load lepton_camera_driver/LeptonThermalSensorNodelet camera_nodelet_manager" output="screen">
       <param name="spi_dev" value="/dev/spidev$(arg spi_id)"/>
+      <param name="spi_speed" value="$(arg spi_speed)"/>
       <param name="i2c_dev" value="/dev/i2c-$(arg i2c_id)"/>
       <param name="camera" value="$(arg camera)"/>
       <param name="temp_thresh" value="$(arg temp_thresh)"/>

@@ -3,17 +3,16 @@
 namespace
 {
   int spi_cs_fd = -1;
-
-  unsigned char spi_mode;
-  unsigned char spi_bitsPerWord;
-  unsigned int spi_speed;
+  uint32_t spi_speed;
+  uint8_t spi_mode;
+  uint8_t spi_bitsPerWord;
 };
 
 namespace Lepton
 {
   namespace SPI
   {
-    bool openPort (std::string spi_device)
+    bool openPort (std::string spi_device, uint32_t speed)
     {
       int status_value = -1;
 
@@ -28,7 +27,7 @@ namespace Lepton
       spi_bitsPerWord = 8;
 
       //----- SET SPI BUS SPEED -----
-      spi_speed = 16000000; //1000000 = 1MHz (1uS per bit)
+      spi_speed = speed;
 
       spi_cs_fd = open(spi_device.c_str(), O_RDWR);
 

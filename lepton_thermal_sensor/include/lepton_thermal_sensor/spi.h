@@ -16,7 +16,7 @@ namespace Lepton
 {
   namespace SPI
   {
-    bool openPort(std::string device);
+    bool openPort(std::string device, uint32_t speed);
     bool closePort(void);
     bool read(uint8_t* buffer_ptr, uint32_t buffer_size);
     int getHandler();

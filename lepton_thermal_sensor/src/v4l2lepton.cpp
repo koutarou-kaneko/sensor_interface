@@ -33,6 +33,7 @@ namespace
   char const *v4l2dev = "/dev/video1";
   char *i2cdev = NULL;
   char *spidev = NULL;
+  uint32_t spi_speed;
   int v4l2sink = -1;
   int width = 80;                //640;    // Default for Flash
   int height = 60;        //480;    // Default for Flash
@@ -57,7 +58,7 @@ namespace
     if(!Lepton::I2C::openPort(std::string(i2cdev)))
       throw std::runtime_error("the I2C port cannot open");
 
-    if(!Lepton::SPI::openPort(std::string(spidev)))
+    if(!Lepton::SPI::openPort(std::string(spidev), spi_speed))
       throw std::runtime_error("the SPI port cannot open");
 
     std::cout << "successd to initialize I2C and SPI" << std::endl;
@@ -83,7 +84,7 @@ namespace
               Lepton::SPI::closePort();
               Lepton::I2C::reboot();
               usleep(750000);
-              Lepton::SPI::openPort(spidev);
+              Lepton::SPI::openPort(spidev, spi_speed);
             }
         }
     }
@@ -216,10 +217,11 @@ namespace
     }
   }
 
-  const char short_options [] = "s:i:hv:t:bgr:";
+  const char short_options [] = "d:s:i:hv:t:bgr:";
 
   const struct option long_options [] = {
     { "spi",  required_argument, NULL, 's' },
+    { "spi_speed",  required_argument, NULL, 'd' },
     { "i2c",  required_argument, NULL, 'i' },
     { "help",    no_argument,       NULL, 'h' },
     { "video",   required_argument, NULL, 'v' },
@@ -236,10 +238,12 @@ void usage(char *exec)
 {
     printf("Usage: %s [options]\n"
            "Options:\n"
-           "  -s | --spi id       Use name as spidev device "
-               "(/dev/spidev0.1 by default)\n"
-           "  -i | --i2c id       Use name as spidev device "
-               "(/dev/i2c-1 by default)\n"
+           "  -s | --spi                Use name as spidev device "
+               "(e.g. /dev/spidev0.1)\n"
+           "  -d | --spi_speed          Use name as spidev device "
+               "(e.g. 16000000)\n"
+           "  -i | --i2c i             Use name as spidev device "
+               "(e.g. /dev/i2c-1)\n"
            "  -h | --help              Print this message\n"
            "  -v | --video name        Use name as v4l2loopback device "
                "(%s by default)\n"
@@ -269,10 +273,14 @@ int main(int argc, char **argv)
         switch (c) {
             case 0:
                 break;
-
             case 's':
               {
                 spidev = optarg;
+                break;
+              }
+            case 'd':
+              {
+                spi_speed = atoi(optarg);
                 break;
               }
             case 'i':

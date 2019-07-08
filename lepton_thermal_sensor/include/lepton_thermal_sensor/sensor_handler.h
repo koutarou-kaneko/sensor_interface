@@ -13,7 +13,7 @@ class SensorHandler
 {
 
 public:
-  SensorHandler(std::string i2c_dev, std::string spi_dev, uint16_t packets_per_frame = 60, uint16_t packet_size = 164, uint8_t head_bytes = 4, uint16_t reboot_max_cnt = 750);
+  SensorHandler(std::string i2c_dev, std::string spi_dev, uint32_t spi_speed, uint16_t packets_per_frame = 60, uint16_t packet_size = 164, uint8_t head_bytes = 4, uint16_t reboot_max_cnt = 750);
   ~SensorHandler();
 
   void connect();
@@ -28,6 +28,7 @@ public:
 private:
   std::string i2c_dev_;
   std::string spi_dev_;
+  uint32_t spi_speed_;
 
   bool connected_;
   uint16_t packets_per_frame_; // equal to rows

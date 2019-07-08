@@ -49,14 +49,16 @@ namespace lepton_camera_driver
 
       // Get the sensor polling configuration and create the sensor handler
       std::string spi_dev, i2c_dev;
+      int spi_speed;
       pnh.param("spi_dev", spi_dev, std::string("/dev/spidev0.1"));
+      pnh.param("spi_speed", spi_speed, 1000000);
       pnh.param("i2c_dev", i2c_dev, std::string("/dev/i2c-0"));
       int packets_per_frame, packet_size, head_bytes, reboot_max_cnt;
       pnh.param("packets_per_frame", packets_per_frame, 60);
       pnh.param("packet_size", packet_size, 164);
       pnh.param("head_bytes", head_bytes, 4);
       pnh.param("reboot_max_cnt", reboot_max_cnt, 750);
-      sh_.reset(new SensorHandler(i2c_dev, spi_dev, packets_per_frame, packet_size, head_bytes, reboot_max_cnt));
+      sh_.reset(new SensorHandler(i2c_dev, spi_dev, spi_speed, packets_per_frame, packet_size, head_bytes, reboot_max_cnt));
 
       // Get the location of our camera config yaml
       std::string camera_info_url, camera_model;

@@ -18,11 +18,16 @@ $ rosrun lepton_thermal_sensor create_udev_rules
 #### Default command:
 - Nvidia Jetson TX2 with the default carrier board
 ```
-$ roslaunch lepton_thermal_sensor nodelet.launch spi_id:=3.0 i2c_id:=0
+$ roslaunch lepton_thermal_sensor nodelet.launch spi_id:=3.0 spi_speed:=16000000 i2c_id:=0
 ```
 **note**: connect SPI to `/dev/spidev3.0` (pin 19, 21, 23, 24), I2C to `/dev/i2c-0` (pin 27, 28). You can also set as `i2c_id:=1` by connecting to `/dev/i2c-1` (pin 3, 5).
 
 - Intel Upboard
+```
+$ roslaunch lepton_thermal_sensor nodelet.launch spi_id:=2.0 spi_speed:=10000000 i2c_id:=1
+```
+**note**: connect SPI to `/dev/spidev2.0` (pin 19, 21, 23, 24), I2C to `/dev/i2c-1` (pin 3, 5).
+
 
 #### Topics
 1. Thermal image for visulation: `/lepton_camera/color/image`
@@ -58,5 +63,10 @@ $ sudo modprobe v4l2loopback
 
 - Nvidia Jetson TX2 with the default carrier board
 ```
-$ roslaunch lepton_thermal_sensor v4l2loopback.launch spi_id:=3.0 i2c_id:=0 video_id:=1
+$ roslaunch lepton_thermal_sensor v4l2loopback.launch spi_id:=3.0 spi_speed:=16000000 i2c_id:=0 video_id:=1
+```
+
+- Intel Upboard
+```
+$ roslaunch lepton_thermal_sensor v4l2loopback.launch spi_id:=2.0 spi_speed:=10000000 i2c_id:=1 video_id:=0
 ```
