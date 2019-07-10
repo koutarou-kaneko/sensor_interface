@@ -8,6 +8,8 @@
   3. check the [pin layout](https://www.jetsonhacks.com/nvidia-jetson-tx2-j21-header-pinout/) of Jetson TX2
 - Intel UPboard
 
+  Follow https://wiki.up-community.org/Ubuntu to replace the kernel: `Install Ubuntu kernel 4.15.0 for UP from PPA on Ubuntu 16.04`
+
 #### Udev rules
 Change the access permision of /dev/spidev-*.* and /dev/i2c-* by following command
 ```
