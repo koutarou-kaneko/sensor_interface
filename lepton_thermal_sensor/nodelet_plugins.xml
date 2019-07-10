@@ -1,0 +1,5 @@
+<library path="lib/libLeptonThermalSensorNodelet">
+  <class name="lepton_camera_driver/LeptonThermalSensorNodelet" type="lepton_camera_driver::LeptonThermalSensorNodelet" base_class_type="nodelet::Nodelet">
+    <description>This is the nodelet for the FLIR Lepton Thermal Sensor.</description>
+  </class>
+</library>

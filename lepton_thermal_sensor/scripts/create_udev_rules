@@ -1,0 +1,16 @@
+#!/bin/bash
+
+echo ""
+echo "This script copies a udev rule to /etc to enable"
+echo "the SPI/I2C  connection permision."
+echo ""
+
+sudo cp `rospack find lepton_thermal_sensor`/99-gpio.rules /etc/udev/rules.d/
+sudo groupadd gpiouser
+sudo adduser ${USER} gpiouser
+
+echo ""
+echo "Reload rules"
+echo ""
+sudo udevadm control --reload-rules
+sudo udevadm trigger
