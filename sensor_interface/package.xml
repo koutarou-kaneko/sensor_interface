@@ -12,13 +12,14 @@
 
   <buildtool_depend>catkin</buildtool_depend>
   <buildtool_depend>catkin</buildtool_depend>
-C
+
   <run_depend>cfs_sensor</run_depend>
   <run_depend>jsk_arduino</run_depend>
   <run_depend>jsk_stm</run_depend>
   <run_depend>leddar_one</run_depend>
   <run_depend>takasako_sps</run_depend>
   <run_depend>px4flow_node</run_depend>
+  <run_depend>lepton_thermal_sensor</run_depend>
 
   <export>
     <metapackage/>
