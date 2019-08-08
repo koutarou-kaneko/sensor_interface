@@ -26,7 +26,7 @@ namespace cfs_sensor
     int maxmy;
     int maxmz;
   } CFS_DEVICE_RATE_VAL;
-  const CFS_DEVICE_RATE_VAL cfs_device_rate_val = {200,200,300,4,4,4};//For CFS034CA301U
+  const CFS_DEVICE_RATE_VAL cfs_device_rate_val = {150,150,300,4,4,4};//For CFS034CA301U
 
   typedef struct {
     double fx;
