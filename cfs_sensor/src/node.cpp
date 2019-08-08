@@ -172,14 +172,13 @@ namespace cfs_sensor
   void CFS_Sensor_Node::convert_sensor_value(void)
   {
     //raw value is 10000 when the force is at rate value;
-    //102[N] = 1gf
-    //Fx,y,z = [gf], Mx,y,z=[gf*mm]
-    cfs_sensor_conv->fx = (int)(((cfs_sensor_raw->fx - cfs_sensor_offset->fx) * cfs_device_rate_val.maxfx * 102)/10000);
-    cfs_sensor_conv->fy = (int)(((cfs_sensor_raw->fy - cfs_sensor_offset->fy) * cfs_device_rate_val.maxfy * 102)/10000);
-    cfs_sensor_conv->fz = (int)(((cfs_sensor_raw->fz - cfs_sensor_offset->fz)  * cfs_device_rate_val.maxfz * 102)/10000);
-    cfs_sensor_conv->mx = (int)(((cfs_sensor_raw->mx - cfs_sensor_offset->mx) * cfs_device_rate_val.maxmx * 102)/10);
-    cfs_sensor_conv->my = (int)(((cfs_sensor_raw->my - cfs_sensor_offset->my) * cfs_device_rate_val.maxmy * 102)/10);
-    cfs_sensor_conv->mz = (int)(((cfs_sensor_raw->mz - cfs_sensor_offset->mz) * cfs_device_rate_val.maxmz * 102)/10);
+    //Fx,y,z = [1e-3 N], Mx,y,z=[1e-6 Nm]
+    cfs_sensor_conv->fx = (int)(((cfs_sensor_raw->fx - cfs_sensor_offset->fx) * cfs_device_rate_val.maxfx * 1000)/10000);
+    cfs_sensor_conv->fy = (int)(((cfs_sensor_raw->fy - cfs_sensor_offset->fy) * cfs_device_rate_val.maxfy * 1000)/10000);
+    cfs_sensor_conv->fz = (int)(((cfs_sensor_raw->fz - cfs_sensor_offset->fz)  * cfs_device_rate_val.maxfz * 1000)/10000);
+    cfs_sensor_conv->mx = (int)(((cfs_sensor_raw->mx - cfs_sensor_offset->mx) * cfs_device_rate_val.maxmx * 1000)/10);
+    cfs_sensor_conv->my = (int)(((cfs_sensor_raw->my - cfs_sensor_offset->my) * cfs_device_rate_val.maxmy * 1000)/10);
+    cfs_sensor_conv->mz = (int)(((cfs_sensor_raw->mz - cfs_sensor_offset->mz) * cfs_device_rate_val.maxmz * 1000)/10);
   }
 
   void CFS_Sensor_Node::publish_sensor_msg(void)
