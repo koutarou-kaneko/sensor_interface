@@ -61,6 +61,7 @@ namespace cfs_sensor
     }
 
     // Ros param
+    nhp_.param("cfs_frame_id", cfs_frame_id, std::string("cfs_frame"));
     // CFS034CA301U: 150, 150, 300, 4, 4, 4
     // CFS018CA201U: 100, 100, 200, 1, 1, 1
     nhp_.param("max_fx", cfs_device_rate_val.maxfx, 150);
@@ -71,7 +72,7 @@ namespace cfs_sensor
     nhp_.param("max_mz", cfs_device_rate_val.maxmz, 4);
 
     //Generate Force Value message Publisher
-    cfs_sensor_Pub_ = n_.advertise<std_msgs::Int32MultiArray>(cfs_sensor_pub_name,0);
+    cfs_sensor_Pub_ = n_.advertise<geometry_msgs::WrenchStamped>(cfs_sensor_pub_name,0);
     cfs_sensor_Svs_ = n_.advertiseService("cfs_sensor_calib", &CFS_Sensor_Node::start_calibration, this);
 
     // 製品情報取得
@@ -194,17 +195,18 @@ namespace cfs_sensor
 
   void CFS_Sensor_Node::publish_sensor_msg(void)
   {
-    std_msgs::Int32MultiArray cfs_msg_;
-    cfs_msg_.data.clear();
+    geometry_msgs::WrenchStamped cfs_msg;
 
-    cfs_msg_.data.push_back((int)cfs_sensor_conv->fx);
-    cfs_msg_.data.push_back((int)cfs_sensor_conv->fy);
-    cfs_msg_.data.push_back((int)cfs_sensor_conv->fz);
-    cfs_msg_.data.push_back((int)cfs_sensor_conv->mx);
-    cfs_msg_.data.push_back((int)cfs_sensor_conv->my);
-    cfs_msg_.data.push_back((int)cfs_sensor_conv->mz);
+    cfs_msg.header.stamp = ros::Time::now();
+    cfs_msg.header.frame_id = cfs_frame_id;
+    cfs_msg.wrench.force.x = cfs_sensor_conv->fx / 1000.0;
+    cfs_msg.wrench.force.y = cfs_sensor_conv->fy / 1000.0;
+    cfs_msg.wrench.force.z = cfs_sensor_conv->fz / 1000.0;
+    cfs_msg.wrench.torque.x = cfs_sensor_conv->mx / 1000000.0;
+    cfs_msg.wrench.torque.y = cfs_sensor_conv->my / 1000000.0;
+    cfs_msg.wrench.torque.z = cfs_sensor_conv->mz / 1000000.0;
 
-    cfs_sensor_Pub_.publish(cfs_msg_);
+    cfs_sensor_Pub_.publish(cfs_msg);
   }
 
   bool CFS_Sensor_Node::start_calibration(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response){

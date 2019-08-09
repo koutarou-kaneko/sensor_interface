@@ -3,7 +3,7 @@
 
 #include <ros/ros.h>
 
-#include <std_msgs/Int32MultiArray.h>
+#include <geometry_msgs/WrenchStamped.h>
 //#include <sensor_msgs/Imu.h>
 //#include <geometry_msgs/Vector3Stamped.h>
 #include <std_srvs/Empty.h>//for calibration service
@@ -64,6 +64,7 @@ namespace cfs_sensor
     SystemInfo gSys;
     bool update_flag;
     CFS_DEVICE_RATE_VAL cfs_device_rate_val;
+    std::string cfs_frame_id;
 
     CFS_SENSOR_DATA *cfs_sensor_raw;  //sensor data before convert
     CFS_SENSOR_DATA *cfs_sensor_offset;  //sensor data offset
