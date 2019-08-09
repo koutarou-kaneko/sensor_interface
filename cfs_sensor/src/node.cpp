@@ -32,13 +32,14 @@ int main(int argc,char **argv)
 {
   ros::init (argc, argv, "cfs_sensor_node");
   ros::NodeHandle n;
-  cfs_sensor::CFS_Sensor_Node cfs_sensor_node(n);
+  ros::NodeHandle nhp("~");
+  cfs_sensor::CFS_Sensor_Node cfs_sensor_node(n, nhp);
   return 0;
 }
 
 namespace cfs_sensor
 {
-  CFS_Sensor_Node::CFS_Sensor_Node (ros::NodeHandle & n):n_ (n)
+  CFS_Sensor_Node::CFS_Sensor_Node (ros::NodeHandle & n, ros::NodeHandle & nhp):n_ (n), nhp_ (nhp)
   {
     int i, l = 0, rt = 0;
     int EndF = 0;
@@ -58,6 +59,16 @@ namespace cfs_sensor
       ROS_INFO("ComPort Open Fail\n");
       exit(0);
     }
+
+    // Ros param
+    // CFS034CA301U: 150, 150, 300, 4, 4, 4
+    // CFS018CA201U: 100, 100, 200, 1, 1, 1
+    nhp_.param("max_fx", cfs_device_rate_val.maxfx, 150);
+    nhp_.param("max_fy", cfs_device_rate_val.maxfy, 150);
+    nhp_.param("max_fz", cfs_device_rate_val.maxfz, 300);
+    nhp_.param("max_mx", cfs_device_rate_val.maxmx, 4);
+    nhp_.param("max_my", cfs_device_rate_val.maxmy, 4);
+    nhp_.param("max_mz", cfs_device_rate_val.maxmz, 4);
 
     //Generate Force Value message Publisher
     cfs_sensor_Pub_ = n_.advertise<std_msgs::Int32MultiArray>(cfs_sensor_pub_name,0);
