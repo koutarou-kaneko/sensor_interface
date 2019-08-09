@@ -51,17 +51,11 @@ namespace cfs_sensor
 
     ROS_INFO("Starting CFS_Sensor_Node");
 
-    ros::Rate loop_rate(S_RATE);
-    CFS_Sensor_Node::Comm_Init();
-    CFS_Sensor_Node::Data_Init();
-
-    if (gSys.com_ok == NG) {
-      ROS_INFO("ComPort Open Fail\n");
-      exit(0);
-    }
-
-    // Ros param
+    // Get ros param
     nhp_.param("cfs_frame_id", cfs_frame_id, std::string("cfs_frame"));
+    nhp_.param("cfs_default_device_name", cfs_default_device_name, std::string("/dev/ttyACM0"));
+    nhp_.param("cfs_sensor_pub_name", cfs_sensor_pub_name, std::string("/cfs/data"));
+    nhp_.param("cfs_sensor_calib_srv_name", cfs_sensor_calib_srv_name, std::string("cfs_sensor_calib"));
     // CFS034CA301U: 150, 150, 300, 4, 4, 4
     // CFS018CA201U: 100, 100, 200, 1, 1, 1
     nhp_.param("max_fx", cfs_device_rate_val.maxfx, 150);
@@ -71,9 +65,18 @@ namespace cfs_sensor
     nhp_.param("max_my", cfs_device_rate_val.maxmy, 4);
     nhp_.param("max_mz", cfs_device_rate_val.maxmz, 4);
 
+    ros::Rate loop_rate(S_RATE);
+    CFS_Sensor_Node::Comm_Init();
+    CFS_Sensor_Node::Data_Init();
+
+    if (gSys.com_ok == NG) {
+      ROS_INFO("ComPort Open Fail\n");
+      exit(0);
+    }
+
     //Generate Force Value message Publisher
     cfs_sensor_Pub_ = n_.advertise<geometry_msgs::WrenchStamped>(cfs_sensor_pub_name,0);
-    cfs_sensor_Svs_ = n_.advertiseService("cfs_sensor_calib", &CFS_Sensor_Node::start_calibration, this);
+    cfs_sensor_Svs_ = n_.advertiseService(cfs_sensor_calib_srv_name, &CFS_Sensor_Node::start_calibration, this);
 
     // 製品情報取得
     GetProductInfo();

@@ -12,9 +12,6 @@
 //#include "cfs_sensor/rs_comm.h"
 #include "cfs_sensor/pComResInternal.h"
 
-const char* cfs_default_device_name = "/dev/ttyACM0";
-const char* cfs_sensor_pub_name = "/cfs/forces";
-
 namespace cfs_sensor
 {
   //センサの定格荷重を設定
@@ -65,6 +62,9 @@ namespace cfs_sensor
     bool update_flag;
     CFS_DEVICE_RATE_VAL cfs_device_rate_val;
     std::string cfs_frame_id;
+    std::string cfs_default_device_name;
+    std::string cfs_sensor_pub_name;
+    std::string cfs_sensor_calib_srv_name;
 
     CFS_SENSOR_DATA *cfs_sensor_raw;  //sensor data before convert
     CFS_SENSOR_DATA *cfs_sensor_offset;  //sensor data offset
