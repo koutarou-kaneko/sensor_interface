@@ -3,7 +3,7 @@
 
 #include <ros/ros.h>
 
-#include <std_msgs/Int32MultiArray.h>
+#include <geometry_msgs/WrenchStamped.h>
 //#include <sensor_msgs/Imu.h>
 //#include <geometry_msgs/Vector3Stamped.h>
 #include <std_srvs/Empty.h>//for calibration service
@@ -11,9 +11,6 @@
 #include "cfs_sensor/pCommon.h"
 //#include "cfs_sensor/rs_comm.h"
 #include "cfs_sensor/pComResInternal.h"
-
-const char* cfs_default_device_name = "/dev/ttyACM0";
-const char* cfs_sensor_pub_name = "/cfs/forces";
 
 namespace cfs_sensor
 {
@@ -26,7 +23,6 @@ namespace cfs_sensor
     int maxmy;
     int maxmz;
   } CFS_DEVICE_RATE_VAL;
-  const CFS_DEVICE_RATE_VAL cfs_device_rate_val = {200,200,300,4,4,4};//For CFS034CA301U
 
   typedef struct {
     double fx;
@@ -47,7 +43,7 @@ namespace cfs_sensor
   class CFS_Sensor_Node
   {
   public:
-    CFS_Sensor_Node (ros::NodeHandle & n);
+    CFS_Sensor_Node (ros::NodeHandle & n, ros::NodeHandle & nhp);
     ~CFS_Sensor_Node (void);
 
     std::string cfs_device_name; //default 
@@ -58,11 +54,17 @@ namespace cfs_sensor
 
   private:
     ros::NodeHandle n_;
+    ros::NodeHandle nhp_;
     ros::Publisher cfs_sensor_Pub_;
     ros::ServiceServer cfs_sensor_Svs_;
 
     SystemInfo gSys;
     bool update_flag;
+    CFS_DEVICE_RATE_VAL cfs_device_rate_val;
+    std::string cfs_frame_id;
+    std::string cfs_default_device_name;
+    std::string cfs_sensor_pub_name;
+    std::string cfs_sensor_calib_srv_name;
 
     CFS_SENSOR_DATA *cfs_sensor_raw;  //sensor data before convert
     CFS_SENSOR_DATA *cfs_sensor_offset;  //sensor data offset

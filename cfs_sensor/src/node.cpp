@@ -32,13 +32,14 @@ int main(int argc,char **argv)
 {
   ros::init (argc, argv, "cfs_sensor_node");
   ros::NodeHandle n;
-  cfs_sensor::CFS_Sensor_Node cfs_sensor_node(n);
+  ros::NodeHandle nhp("~");
+  cfs_sensor::CFS_Sensor_Node cfs_sensor_node(n, nhp);
   return 0;
 }
 
 namespace cfs_sensor
 {
-  CFS_Sensor_Node::CFS_Sensor_Node (ros::NodeHandle & n):n_ (n)
+  CFS_Sensor_Node::CFS_Sensor_Node (ros::NodeHandle & n, ros::NodeHandle & nhp):n_ (n), nhp_ (nhp)
   {
     int i, l = 0, rt = 0;
     int EndF = 0;
@@ -50,6 +51,20 @@ namespace cfs_sensor
 
     ROS_INFO("Starting CFS_Sensor_Node");
 
+    // Get ros param
+    nhp_.param("cfs_frame_id", cfs_frame_id, std::string("cfs_frame"));
+    nhp_.param("cfs_default_device_name", cfs_default_device_name, std::string("/dev/ttyACM0"));
+    nhp_.param("cfs_sensor_pub_name", cfs_sensor_pub_name, std::string("/cfs/data"));
+    nhp_.param("cfs_sensor_calib_srv_name", cfs_sensor_calib_srv_name, std::string("cfs_sensor_calib"));
+    // CFS034CA301U: 150, 150, 300, 4, 4, 4
+    // CFS018CA201U: 100, 100, 200, 1, 1, 1
+    nhp_.param("max_fx", cfs_device_rate_val.maxfx, 150);
+    nhp_.param("max_fy", cfs_device_rate_val.maxfy, 150);
+    nhp_.param("max_fz", cfs_device_rate_val.maxfz, 300);
+    nhp_.param("max_mx", cfs_device_rate_val.maxmx, 4);
+    nhp_.param("max_my", cfs_device_rate_val.maxmy, 4);
+    nhp_.param("max_mz", cfs_device_rate_val.maxmz, 4);
+
     ros::Rate loop_rate(S_RATE);
     CFS_Sensor_Node::Comm_Init();
     CFS_Sensor_Node::Data_Init();
@@ -60,8 +75,8 @@ namespace cfs_sensor
     }
 
     //Generate Force Value message Publisher
-    cfs_sensor_Pub_ = n_.advertise<std_msgs::Int32MultiArray>(cfs_sensor_pub_name,0);
-    cfs_sensor_Svs_ = n_.advertiseService("cfs_sensor_calib", &CFS_Sensor_Node::start_calibration, this);
+    cfs_sensor_Pub_ = n_.advertise<geometry_msgs::WrenchStamped>(cfs_sensor_pub_name,0);
+    cfs_sensor_Svs_ = n_.advertiseService(cfs_sensor_calib_srv_name, &CFS_Sensor_Node::start_calibration, this);
 
     // 製品情報取得
     GetProductInfo();
@@ -172,29 +187,29 @@ namespace cfs_sensor
   void CFS_Sensor_Node::convert_sensor_value(void)
   {
     //raw value is 10000 when the force is at rate value;
-    //102[N] = 1gf
-    //Fx,y,z = [gf], Mx,y,z=[gf*mm]
-    cfs_sensor_conv->fx = (int)(((cfs_sensor_raw->fx - cfs_sensor_offset->fx) * cfs_device_rate_val.maxfx * 102)/10000);
-    cfs_sensor_conv->fy = (int)(((cfs_sensor_raw->fy - cfs_sensor_offset->fy) * cfs_device_rate_val.maxfy * 102)/10000);
-    cfs_sensor_conv->fz = (int)(((cfs_sensor_raw->fz - cfs_sensor_offset->fz)  * cfs_device_rate_val.maxfz * 102)/10000);
-    cfs_sensor_conv->mx = (int)(((cfs_sensor_raw->mx - cfs_sensor_offset->mx) * cfs_device_rate_val.maxmx * 102)/10);
-    cfs_sensor_conv->my = (int)(((cfs_sensor_raw->my - cfs_sensor_offset->my) * cfs_device_rate_val.maxmy * 102)/10);
-    cfs_sensor_conv->mz = (int)(((cfs_sensor_raw->mz - cfs_sensor_offset->mz) * cfs_device_rate_val.maxmz * 102)/10);
+    //Fx,y,z = [1e-3 N], Mx,y,z=[1e-6 Nm]
+    cfs_sensor_conv->fx = (int)(((cfs_sensor_raw->fx - cfs_sensor_offset->fx) * cfs_device_rate_val.maxfx * 1000)/10000);
+    cfs_sensor_conv->fy = (int)(((cfs_sensor_raw->fy - cfs_sensor_offset->fy) * cfs_device_rate_val.maxfy * 1000)/10000);
+    cfs_sensor_conv->fz = (int)(((cfs_sensor_raw->fz - cfs_sensor_offset->fz)  * cfs_device_rate_val.maxfz * 1000)/10000);
+    cfs_sensor_conv->mx = (int)(((cfs_sensor_raw->mx - cfs_sensor_offset->mx) * cfs_device_rate_val.maxmx * 1000)/10);
+    cfs_sensor_conv->my = (int)(((cfs_sensor_raw->my - cfs_sensor_offset->my) * cfs_device_rate_val.maxmy * 1000)/10);
+    cfs_sensor_conv->mz = (int)(((cfs_sensor_raw->mz - cfs_sensor_offset->mz) * cfs_device_rate_val.maxmz * 1000)/10);
   }
 
   void CFS_Sensor_Node::publish_sensor_msg(void)
   {
-    std_msgs::Int32MultiArray cfs_msg_;
-    cfs_msg_.data.clear();
+    geometry_msgs::WrenchStamped cfs_msg;
 
-    cfs_msg_.data.push_back((int)cfs_sensor_conv->fx);
-    cfs_msg_.data.push_back((int)cfs_sensor_conv->fy);
-    cfs_msg_.data.push_back((int)cfs_sensor_conv->fz);
-    cfs_msg_.data.push_back((int)cfs_sensor_conv->mx);
-    cfs_msg_.data.push_back((int)cfs_sensor_conv->my);
-    cfs_msg_.data.push_back((int)cfs_sensor_conv->mz);
+    cfs_msg.header.stamp = ros::Time::now();
+    cfs_msg.header.frame_id = cfs_frame_id;
+    cfs_msg.wrench.force.x = cfs_sensor_conv->fx / 1000.0;
+    cfs_msg.wrench.force.y = cfs_sensor_conv->fy / 1000.0;
+    cfs_msg.wrench.force.z = cfs_sensor_conv->fz / 1000.0;
+    cfs_msg.wrench.torque.x = cfs_sensor_conv->mx / 1000000.0;
+    cfs_msg.wrench.torque.y = cfs_sensor_conv->my / 1000000.0;
+    cfs_msg.wrench.torque.z = cfs_sensor_conv->mz / 1000000.0;
 
-    cfs_sensor_Pub_.publish(cfs_msg_);
+    cfs_sensor_Pub_.publish(cfs_msg);
   }
 
   bool CFS_Sensor_Node::start_calibration(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response){
