@@ -52,6 +52,7 @@ void SensorHandler::reboot()
   Lepton::I2C::reboot();
   usleep(750000);
   Lepton::SPI::openPort(spi_dev_, spi_speed_);
+  sleep(2); // wait for 2 seconds
 }
 
 bool SensorHandler::grabImage(cv::Mat &temp_map, double& timestamp)
