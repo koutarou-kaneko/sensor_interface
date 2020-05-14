@@ -10,7 +10,7 @@ LeddarOne::LeddarOne(ros::NodeHandle nh, ros::NodeHandle nhp): nh_(nh), nhp_(nhp
   nhp_.param("min_range", min_range_, 0.0); //0[m]
   nhp_.param("max_range", max_range_, 40.0); //40[m]
 
-  range_pub_ = nh_.advertise<sensor_msgs::Range>("/distance", 10);
+  range_pub_ = nh_.advertise<sensor_msgs::Range>("leddar_one/range", 10);
 
   configure_ = false;
   start_connection_ = true;

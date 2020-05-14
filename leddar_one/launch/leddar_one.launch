@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
   <arg name="baud" default="115200" />
-  <arg name="port" default="/dev/leddarone" />
+  <arg name="port" default="/dev/ttyUSB0" />
 
   <node pkg="leddar_one" type="leddar_one_node" name="leddar_one" output="screen">
     <param name="baud" value="$(arg baud)" />
