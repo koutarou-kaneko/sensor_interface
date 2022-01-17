@@ -54,7 +54,7 @@ namespace cfs_sensor
     // Get ros param
     nhp_.param("cfs_frame_id", cfs_frame_id, std::string("cfs_frame"));
     nhp_.param("cfs_default_device_name", cfs_default_device_name, std::string("/dev/ttyACM0"));
-    nhp_.param("cfs_sensor_pub_name", cfs_sensor_pub_name, std::string("/cfs/data"));
+    nhp_.param("cfs_sensor_pub_name", cfs_sensor_pub_name, std::string("cfs/data"));
     nhp_.param("cfs_sensor_calib_srv_name", cfs_sensor_calib_srv_name, std::string("cfs_sensor_calib"));
     // CFS034CA301U: 150, 150, 300, 4, 4, 4
     // CFS018CA201U: 100, 100, 200, 1, 1, 1
