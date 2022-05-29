@@ -73,7 +73,7 @@ LeddarOne::~LeddarOne()
 
 void LeddarOne::communicationFunc()
 {
-  double du = 1 / loop_rate_ * 1000; // to millisec
+  int du = 1.0 / loop_rate_ * 1000; // to millisec
 
   uint16_t tab_reg_values[32];
   while(ros::ok())
