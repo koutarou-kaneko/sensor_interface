@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(lepton_thermal_sensor)
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+add_compile_options(-std=c++14)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -26,6 +26,8 @@ generate_dynamic_reconfigure_options(
 ###################################
 catkin_package(
   INCLUDE_DIRS include
+  LIBRARIES leddar_one_driver
+  CATKIN_DEPENDS camera_info_manager cv_bridge image_transport nodelet roscpp dynamic_reconfigure sensor_msgs
 )
 
 ###########
@@ -62,3 +64,23 @@ add_executable(v4l2lepton_node
   src/palettes.cpp
   src/v4l2lepton.cpp)
 target_link_libraries(v4l2lepton_node leptonSDK ${catkin_LIBRARIES})
+
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
+
+install(TARGETS LeptonThermalSensorNodelet sensor_handler
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+)
+
+install(TARGETS v4l2lepton_node
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(DIRECTORY launch/ scripts/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+  USE_SOURCE_PERMISSIONS
+)
+
+install(FILES nodelet_plugins.xml
+        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)

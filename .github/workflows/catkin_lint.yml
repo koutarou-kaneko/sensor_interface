@@ -25,4 +25,4 @@ jobs:
           rosdep update
       - name: catkin lint test
         run: |
-          ROS_DISTRO=melodic catkin_lint --resolve-env --strict $PWD
+          ROS_DISTRO=noetic catkin_lint --resolve-env --strict $PWD

@@ -1,7 +1,4 @@
-cmake_minimum_required(VERSION 3.3)
-project(leptonSDK)
-
-add_library(${PROJECT_NAME}
+add_library(leptonSDK
   LEPTON_AGC.c
   LEPTON_VID.c
   LEPTON_I2C_Protocol.c
@@ -12,3 +9,7 @@ add_library(${PROJECT_NAME}
   i2c_handler.c
   crc16fast.c
   )
+
+install(TARGETS leptonSDK
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+)
