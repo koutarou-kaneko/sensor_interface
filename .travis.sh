@@ -2,7 +2,7 @@
 
 set -x
 
-apt-get update -qq && apt-get install -y -q wget sudo lsb-release gnupg git sed # for docker
+apt-get update -qq && apt-get install -y -q wget sudo lsb-release gnupg git sed build-essential # for docker
 echo 'debconf debconf/frontend select Noninteractive' | sudo debconf-set-selections
 
 echo "Testing branch $TRAVIS_BRANCH of $REPOSITORY_NAME"
@@ -31,7 +31,6 @@ fi
 rosdep update --include-eol-distros
 
 # Install source code
-(cd ${CI_SOURCE_PATH}; git log --oneline | head -10)
 mkdir -p ~/catkin_ws/src
 cd ~/catkin_ws
 ln -sf ${CI_SOURCE_PATH} src/${REPOSITORY_NAME}
