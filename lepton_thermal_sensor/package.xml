@@ -17,6 +17,9 @@
   <depend>sensor_msgs</depend>
   <depend>dynamic_reconfigure</depend>
 
+  <exec_depend>image_view</exec_depend>
+  <exec_depend>cv_camera</exec_depend>
+
   <export>
     <nodelet plugin="${prefix}/nodelet_plugins.xml" />
   </export>
