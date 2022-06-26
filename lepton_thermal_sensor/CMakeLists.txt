@@ -76,11 +76,17 @@ install(TARGETS v4l2lepton_node
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
-install(DIRECTORY launch/ scripts/
+install(DIRECTORY launch/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
   USE_SOURCE_PERMISSIONS
 )
 
-install(FILES nodelet_plugins.xml
+install(DIRECTORY scripts/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/scripts
+  USE_SOURCE_PERMISSIONS
+)
+
+
+install(FILES nodelet_plugins.xml 99-gpio.rules
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
