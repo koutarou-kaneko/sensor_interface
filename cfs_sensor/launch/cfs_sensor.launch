@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<launch>
+
+  <arg name="type" default="CFS034CA301U" />
+  <arg name="port" default="/dev/ttyACM0" />
+
+  <node name="$(anon forces_node)" pkg="cfs_sensor" type="cfs_node"  output="screen">
+    <rosparam file="$(find cfs_sensor)/config/$(arg type).yaml" command="load" />
+    <param name="cfs_default_device_name" value="$(arg port)" />
+  </node>
+
+</launch>
