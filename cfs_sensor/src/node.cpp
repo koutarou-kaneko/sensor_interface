@@ -77,6 +77,7 @@ namespace cfs_sensor
     //Generate Force Value message Publisher
     cfs_sensor_Pub_ = n_.advertise<geometry_msgs::WrenchStamped>(cfs_sensor_pub_name,0);
     cfs_sensor_Svs_ = n_.advertiseService(cfs_sensor_calib_srv_name, &CFS_Sensor_Node::start_calibration, this);
+    connection_state_pub_ = n_.advertise<std_msgs::Int32>("/cfs/connection_state",1);
 
     // 製品情報取得
     GetProductInfo();
@@ -105,11 +106,14 @@ namespace cfs_sensor
     // 連続送信開始 main loop
     CFS_Sensor_Node::SerialStart();
     EndF = 0;
+    ros::Time last_data_time = ros::Time::now();
     while(ros::ok()) {
       Comm_Rcv();
+      bool got_data = false;
       if ( Comm_CheckRcv() != 0 ) {		//check receive
         rt = CFS_Sensor_Node::update_sensor_data();
         if(rt>0){
+          got_data = true;
           CFS_Sensor_Node::convert_sensor_value();
           CFS_Sensor_Node::publish_sensor_msg();
           stCmdHead = (ST_RES_HEAD *)CommRcvBuff;
@@ -124,6 +128,16 @@ namespace cfs_sensor
           }
         }
       }//end of check receive
+
+      if(got_data) {
+        last_data_time = ros::Time::now();
+        publish_connection_state(1);
+      }
+      if((ros::Time::now() - last_data_time).toSec() > 0.5) {
+        ROS_ERROR_THROTTLE(3, "CFS connection lost : no data recieved");
+        publish_connection_state(0);
+      }
+
       if ( EndF==1 ) break;
       ros::spinOnce();
       loop_rate.sleep();
@@ -210,6 +224,13 @@ namespace cfs_sensor
     cfs_msg.wrench.torque.z = cfs_sensor_conv->mz / 1000000.0;
 
     cfs_sensor_Pub_.publish(cfs_msg);
+  }
+
+  void CFS_Sensor_Node::publish_connection_state(int state)
+  {
+    std_msgs::Int32 msg;
+    msg.data = state;
+    connection_state_pub_.publish(msg);
   }
 
   bool CFS_Sensor_Node::start_calibration(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response){

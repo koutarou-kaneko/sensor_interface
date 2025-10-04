@@ -4,6 +4,7 @@
 #include <ros/ros.h>
 
 #include <geometry_msgs/WrenchStamped.h>
+#include <std_msgs/Int32.h>
 //#include <sensor_msgs/Imu.h>
 //#include <geometry_msgs/Vector3Stamped.h>
 #include <std_srvs/Empty.h>//for calibration service
@@ -57,6 +58,7 @@ namespace cfs_sensor
     ros::NodeHandle nhp_;
     ros::Publisher cfs_sensor_Pub_;
     ros::ServiceServer cfs_sensor_Svs_;
+    ros::Publisher connection_state_pub_;
 
     SystemInfo gSys;
     bool update_flag;
@@ -82,6 +84,7 @@ namespace cfs_sensor
 
     //ros functions
     void publish_sensor_msg(void);
+    void publish_connection_state(int);
     void Node_Close(void);
 
     //serial communication with cfs sensor
