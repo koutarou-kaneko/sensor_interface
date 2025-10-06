@@ -134,8 +134,35 @@ namespace cfs_sensor
         publish_connection_state(1);
       }
       if((ros::Time::now() - last_data_time).toSec() > 0.5) {
-        ROS_ERROR_THROTTLE(3, "CFS connection lost : no data recieved");
+        ROS_ERROR_THROTTLE(1, "CFS connection lost : no data recieved");
         publish_connection_state(0);
+        gSys.com_ok = NG;
+
+        // try to reconect
+        CFS_Sensor_Node::Node_Close();
+        ros::Duration(0.1).sleep();
+        ROS_WARN("Trying to reconnect to CFS sensor...");
+
+        int retry_count = 0;
+        while (ros::ok() && gSys.com_ok == NG && retry_count<10) {
+          CFS_Sensor_Node::Comm_Init();
+          if (gSys.com_ok == OK) {
+            ROS_INFO("Reconnected to CFS sensor successfully!");
+            CFS_Sensor_Node::SerialStart();
+            last_data_time = ros::Time::now();
+            publish_connection_state(1);
+            break;
+          }
+          else {
+            ROS_WARN("Reconnect attempt %d failed", retry_count + 1);
+            retry_count++;
+            ros::Duration(0.5).sleep();
+          }
+        }
+        if (gSys.com_ok == NG) {
+          ROS_ERROR("Failed to reconnect after multiple attempts.");
+        }
+
       }
 
       if ( EndF==1 ) break;
